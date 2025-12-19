@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,8 @@ import {
   Platform,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
-import { Audio } from "expo-av"; // <--- Le module Audio
+import { Audio } from "expo-av";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -23,6 +24,8 @@ import { CreditBadge } from "../../src/components/ui/CreditBadge";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const setCredits = useUserStore((state) => state.setCredits);
   const credits = useUserStore((state) => state.credits);
   const { mutate: createJob, isPending } = useCreateJob();
 
@@ -147,7 +150,30 @@ export default function HomeScreen() {
     // On peut envoyer la durée estimée pour aider le backend si besoin
     formData.append("estimated_duration", duration.toString());
 
-    createJob(formData);
+    createJob(formData, {
+      onSuccess: (data) => {
+        // 1. Mise à jour des crédits depuis la réponse API
+        // Rappel: ton backend renvoie { billing: { remaining_credits: ... } }
+        if (data.billing?.remaining_credits !== undefined) {
+          setCredits(data.billing.remaining_credits);
+        }
+
+        // 2. Nettoyage de l'interface
+        reset();
+
+        // 3. On prévient React Query qu'il y a de nouvelles données pour l'historique
+        queryClient.invalidateQueries({ queryKey: ["my-jobs"] });
+
+        // 4. Redirection vers l'historique
+        router.push("/(tabs)/history");
+      },
+      onError: (error: any) => {
+        Alert.alert(
+          "Erreur",
+          error.response?.data?.message || "L'envoi a échoué",
+        );
+      },
+    });
   };
 
   // Reset de l'interface
@@ -207,7 +233,7 @@ export default function HomeScreen() {
                 className="flex-row items-center space-x-2 bg-zinc-900 px-6 py-3 rounded-full border border-zinc-800"
               >
                 <Ionicons name="cloud-upload-outline" size={20} color="white" />
-                <Text className="text-zinc-300 font-medium">
+                <Text className="text-zinc-300 font-medium pl-2">
                   Importer un fichier
                 </Text>
               </TouchableOpacity>

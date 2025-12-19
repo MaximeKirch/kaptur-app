@@ -22,7 +22,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="history" // Tu créeras ce fichier plus tard
+        name="history"
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View className={` rounded-xl ${focused ? "bg-blue-500/10" : ""}`}>

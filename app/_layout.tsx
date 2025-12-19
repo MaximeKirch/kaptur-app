@@ -63,6 +63,7 @@ function RootLayoutNav() {
         }}
       >
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="job/[id]" />
         <Stack.Screen
           name="paywall"
           options={{

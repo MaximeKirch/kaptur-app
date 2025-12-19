@@ -10,7 +10,14 @@ export const useCreateJob = () => {
 
   return useMutation({
     mutationFn: async (jobData: any) => {
-      const response = await api.post("/process-voice", jobData);
+      const response = await api.post("/process-voice", jobData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        transformRequest: (data, headers) => {
+          return data;
+        },
+      });
       return response.data;
     },
     onSuccess: (data) => {
