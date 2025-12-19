@@ -84,7 +84,8 @@ export default function RegisterScreen() {
             Créer un compte
           </Text>
           <Text className="text-zinc-400 text-lg">
-            Rejoignez Kaptur et commencez à scanner.
+            Rejoignez Kaptur et commencez à générer vos comptes rendu de
+            chantier.
           </Text>
         </View>
 

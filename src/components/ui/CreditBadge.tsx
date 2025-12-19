@@ -1,4 +1,3 @@
-// src/components/ui/CreditBadge.tsx
 import { View, Text, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { useUserStore } from "../../store/userStore";

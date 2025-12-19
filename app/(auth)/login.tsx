@@ -59,7 +59,9 @@ export default function LoginScreen() {
     >
       <View className="mb-12">
         <Text className="text-4xl font-bold text-white mb-2">Kaptur</Text>
-        <Text className="text-text-muted text-lg">Bon retour parmi nous.</Text>
+        <Text className="text-text-muted text-lg">
+          Générez vos comptes rendu de chantier avec l'aide de l'IA.
+        </Text>
       </View>
 
       <View className="space-y-4">

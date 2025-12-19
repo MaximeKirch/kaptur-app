@@ -175,9 +175,8 @@ export default function HomeScreen() {
         <View className="flex-row justify-between items-center mb-8">
           <View>
             <Text className="text-3xl font-bold text-white tracking-tight">
-              Kaptur.
+              Kaptur
             </Text>
-            <Text className="text-zinc-400 text-sm">IA Audio Processing</Text>
           </View>
           <CreditBadge />
         </View>
