@@ -9,8 +9,6 @@ export const CreditBadge = () => {
   const router = useRouter();
   const isLow = credits === 0;
 
-  console.log(state);
-
   return (
     <Pressable
       onPress={() => router.push("/paywall")}

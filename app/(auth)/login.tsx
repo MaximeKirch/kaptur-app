@@ -58,7 +58,7 @@ export default function LoginScreen() {
       className="flex-1 bg-background justify-center px-6"
     >
       <View className="mb-12">
-        <Text className="text-4xl font-bold text-white mb-2">Kaptur.</Text>
+        <Text className="text-4xl font-bold text-white mb-2">Kaptur</Text>
         <Text className="text-text-muted text-lg">Bon retour parmi nous.</Text>
       </View>
 

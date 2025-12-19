@@ -32,29 +32,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   checkAuth: async () => {
-    console.log("[CheckAuth] Démarrage...");
     try {
       const token = await SecureStore.getItemAsync(TOKEN_KEY);
-      console.log("[CheckAuth] Token dans SecureStore :", token); // Vérifie s'il n'est pas null
 
       if (token) {
-        set({ token, isAuthenticated: true }); // On connecte temporairement
+        set({ token, isAuthenticated: true });
 
         try {
-          console.log("[CheckAuth] Appel API /auth/me...");
           const res = await api.get("/auth/me");
-          console.log("[CheckAuth] Succès !", res.status);
 
           set({ user: res.data });
           useUserStore.getState().setCredits(res.data.credits);
         } catch (err: any) {
-          // --- C'EST ICI QUE ÇA CASSE ---
-          console.error(
-            "[CheckAuth] ERREUR API :",
-            err.response?.status,
-            err.response?.data,
-          );
-
           if (err.response?.status === 401) {
             console.log("[CheckAuth] 401 détecté -> Logout");
             get().logout();

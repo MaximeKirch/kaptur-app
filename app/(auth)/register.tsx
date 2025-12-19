@@ -1,4 +1,3 @@
-// app/(auth)/register.tsx
 import { useState } from "react";
 import {
   View,
@@ -35,17 +34,12 @@ export default function RegisterScreen() {
 
     setIsLoading(true);
     try {
-      // 1. Inscription
-      // Assure-toi que ton backend attend { email, password, name }
       const response = await api.post("/auth/register", {
         email,
         password,
         name,
       });
 
-      // 2. Auto-Login immédiat
-      // Si ton API register renvoie déjà le token, utilise-le.
-      // Sinon, on fait un appel login transparent juste après.
       const { auth, user } = response.data;
 
       if (auth.accessToken) {

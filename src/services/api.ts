@@ -1,4 +1,3 @@
-// src/services/api.ts
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
@@ -12,35 +11,19 @@ export const api = axios.create({
   timeout: 10000,
 });
 
-// --- LE MORCEAU MANQUANT OU INCORRECT ---
-// Intercepteur de REQUÊTE (Request)
-// Il s'exécute AVANT que la requête parte vers le serveur
 api.interceptors.request.use(async (config) => {
   try {
     const token = await SecureStore.getItemAsync("kaptur_auth_token");
 
-    // --- MOUCHARD 1 ---
-    console.log(
-      "[API Interceptor] Token trouvé en local ?",
-      token ? "OUI" : "NON",
-    );
-
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      // --- MOUCHARD 2 ---
-      console.log(
-        "[API Interceptor] Header injecté :",
-        config.headers.Authorization,
-      );
     }
   } catch (error) {
     console.error("Erreur lecture token", error);
   }
   return config;
 });
-// ----------------------------------------
 
-// Intercepteur de RÉPONSE (celui que tu as déjà)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
