@@ -10,12 +10,10 @@ export const useCreateJob = () => {
 
   return useMutation({
     mutationFn: async (jobData: any) => {
-      // Ton backend doit renvoyer le nouveau solde de crédits dans la réponse
       const response = await api.post("/process-voice", jobData);
       return response.data;
     },
     onSuccess: (data) => {
-      // Le job est lancé, on met à jour les crédits avec la vérité du serveur
       if (typeof data.remainingCredits === "number") {
         setCredits(data.remainingCredits);
       }
@@ -25,9 +23,6 @@ export const useCreateJob = () => {
       const status = error.response?.status;
 
       if (status === 402) {
-        // C'EST ICI QUE TOUT SE JOUE
-        // Le backend a dit "Pas assez d'argent"
-        // On redirige immédiatement vers le Paywall RevenueCat
         router.push("/paywall");
       } else {
         // Erreur technique générique
