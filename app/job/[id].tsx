@@ -39,19 +39,17 @@ export default function JobDetailScreen() {
   } = useQuery({
     queryKey: ["job", id],
     queryFn: async () => {
-      const res = await api.get(`/jobs/${id}`); // Assure-toi que cette route existe sur ton backend (getJobStatus)
+      const res = await api.get(`/jobs/${id}`);
       return res.data;
     },
     enabled: !!id,
-  },);
+  });
 
   const handleCopy = async (text: string) => {
     await Clipboard.setStringAsync(text);
-    // Tu pourrais ajouter un petit Toast ici
   };
 
   const handleShare = async () => {
-    // On partage ce qui est actuellement dans l'éditeur (donc tes modifs sont prises en compte)
     const messageToShare =
       activeTab === "editor"
         ? editableText
@@ -116,10 +114,15 @@ export default function JobDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        <Text className="text-white font-bold text-lg">Détail Analyse</Text>
-        <TouchableOpacity onPress={handleShare}>
-          <Ionicons name="share-outline" size={24} color="#3b82f6" />
-        </TouchableOpacity>
+        {!isFailed && (
+          <>
+            <Text className="text-white font-bold text-lg">Détail Analyse</Text>
+
+            <TouchableOpacity onPress={handleShare}>
+              <Ionicons name="share-outline" size={24} color="#3b82f6" />
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
       <ScrollView className="flex-1">
