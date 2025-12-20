@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from "react-native";
-import { formatTime } from "../../utils/audioUtils"; // Assure-toi d'exporter ton helper formatTime
+import { formatTime } from "../../utils/audioUtils";
 
 interface Props {
   duration: number;
