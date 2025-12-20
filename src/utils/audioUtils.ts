@@ -45,3 +45,13 @@ export const calculateCost = (durationSeconds: number): number => {
   // Sécurité : minimum 1 crédit
   return Math.max(1, minutes);
 };
+
+/**
+ * Formate un nombre de secondes en chaîne "MM:SS"
+ * Ex: 65 -> "1:05"
+ */
+export const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+};
