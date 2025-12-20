@@ -12,11 +12,18 @@ import { api } from "../../src/services/api";
 import { JobCard } from "../../src/components/JobCard";
 import { useRouter, Href } from "expo-router";
 import { useMe } from "../../src/hooks/useMe";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
+// On définit une petite interface pour éviter les 'any' partout
+interface Job {
+  id: string;
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+  createdAt: string;
+  result?: any;
+  error?: string;
+}
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const wasPendingRef = useRef(false);
 
   const { refetch: refetchUser } = useMe();
@@ -26,7 +33,7 @@ export default function HistoryScreen() {
     isLoading,
     refetch: refetchJobs,
     isRefetching,
-  } = useQuery({
+  } = useQuery<Job[]>({
     queryKey: ["my-jobs"],
     queryFn: async () => {
       const res = await api.get("/jobs/");
@@ -37,12 +44,33 @@ export default function HistoryScreen() {
       if (!data) return false;
 
       const hasPendingJobs = data.some(
-        (job: any) => job.status === "PENDING" || job.status === "PROCESSING",
+        (job) => job.status === "PENDING" || job.status === "PROCESSING",
       );
 
       return hasPendingJobs ? 3000 : false;
     },
   });
+
+  // --- REMPLACEMENT : Gestion des effets de bord ---
+  useEffect(() => {
+    if (!jobs) return;
+
+    // 1. On regarde s'il y a des jobs en cours MAINTENANT
+    const hasPending = jobs.some(
+      (j) => j.status === "PENDING" || j.status === "PROCESSING",
+    );
+
+    // 2. Logique de transition : Si AVANT c'était en cours, et MAINTENANT c'est fini
+    if (wasPendingRef.current && !hasPending) {
+      console.log(
+        "🔄 Jobs finished (Success or Failed), refreshing credits...",
+      );
+      refetchUser();
+    }
+
+    // 3. On met à jour la référence pour le prochain rendu
+    wasPendingRef.current = hasPending;
+  }, [jobs]);
 
   const handleRefresh = async () => {
     await Promise.all([refetchJobs(), refetchUser()]);
