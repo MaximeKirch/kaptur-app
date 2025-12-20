@@ -18,7 +18,7 @@ export default function SettingsScreen() {
 
       <TouchableOpacity
         onPress={handleLogout}
-        className="w-full bg-zinc-900 border border-zinc-800 py-4 rounded-xl items-center"
+        className="w-auto bg-zinc-900 border border-zinc-800 py-4 px-12 mx-auto rounded-xl items-center"
       >
         <Text className="text-red-500 font-bold text-lg">Se déconnecter</Text>
       </TouchableOpacity>

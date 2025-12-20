@@ -188,8 +188,8 @@ export default function HomeScreen() {
   // Formatage du temps (MM:SS)
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    const secs = (seconds % 60).toFixed(2);
+    return `${mins}:${parseInt(secs) < 10 ? "0" : ""}${secs}`;
   };
 
   const hasEnoughCredits = credits >= cost;

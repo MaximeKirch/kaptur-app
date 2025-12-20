@@ -7,18 +7,24 @@ import {
   RefreshControl,
   Pressable,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../src/services/api";
 import { JobCard } from "../../src/components/JobCard";
-import { useRouter, Href } from "expo-router"; // <--- Import Href pour le typage
+import { useRouter, Href } from "expo-router";
+import { useMe } from "../../src/hooks/useMe";
+import { useRef } from "react";
 
 export default function HistoryScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const wasPendingRef = useRef(false);
+
+  const { refetch: refetchUser } = useMe();
 
   const {
     data: jobs,
     isLoading,
-    refetch,
+    refetch: refetchJobs,
     isRefetching,
   } = useQuery({
     queryKey: ["my-jobs"],
@@ -29,13 +35,18 @@ export default function HistoryScreen() {
     refetchInterval: (query) => {
       const data = query.state.data;
       if (!data) return false;
+
       const hasPendingJobs = data.some(
         (job: any) => job.status === "PENDING" || job.status === "PROCESSING",
       );
-      // On ralentit un peu le polling (3s) pour être gentil avec le serveur
+
       return hasPendingJobs ? 3000 : false;
     },
   });
+
+  const handleRefresh = async () => {
+    await Promise.all([refetchJobs(), refetchUser()]);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -61,10 +72,7 @@ export default function HistoryScreen() {
             renderItem={({ item }) => (
               <Pressable
                 className="active:opacity-70"
-                onPress={() =>
-                  // ON CHANGE ICI : On construit l'URL manuellement
-                  router.push(`/job/${item.id}` as Href)
-                }
+                onPress={() => router.push(`/job/${item.id}` as Href)}
               >
                 <JobCard job={item} />
               </Pressable>
@@ -72,7 +80,7 @@ export default function HistoryScreen() {
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching}
-                onRefresh={refetch}
+                onRefresh={handleRefresh}
                 tintColor="#fff"
               />
             }

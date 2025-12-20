@@ -1,13 +1,22 @@
-import { View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
+import { View, Text, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { format } from "date-fns"; // Installe date-fns si tu l'as pas: npm install date-fns
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 export const JobCard = ({ job }: { job: any }) => {
   const isPending = job.status === "PENDING" || job.status === "PROCESSING";
   const isFailed = job.status === "FAILED";
+  const isCompleted = job.status === "COMPLETED";
 
   return (
-    <View className="bg-surface mb-4 rounded-xl border border-zinc-800 p-4">
+    <View
+      className={`mb-4 rounded-xl border p-4 ${
+        isFailed
+          ? "bg-red-500/5 border-red-500/20"
+          : "bg-surface border-zinc-800"
+      }`}
+    >
+      {/* HEADER : Date + Badge */}
       <View className="flex-row justify-between items-start mb-2">
         <View className="flex-row items-center">
           <View
@@ -20,13 +29,13 @@ export const JobCard = ({ job }: { job: any }) => {
             }`}
           />
           <Text className="text-zinc-400 text-xs font-medium">
-            {format(new Date(job.createdAt), "dd MMM à HH:mm")}
+            {format(new Date(job.createdAt), "dd MMM à HH:mm", { locale: fr })}
           </Text>
         </View>
 
-        {/* Badge de statut */}
+        {/* LE BADGE DE STATUT */}
         <View
-          className={`px-2 py-1 rounded-md ${
+          className={`px-2 py-1 rounded-md flex-row items-center space-x-1 ${
             isPending
               ? "bg-yellow-500/10"
               : isFailed
@@ -34,8 +43,16 @@ export const JobCard = ({ job }: { job: any }) => {
                 : "bg-green-500/10"
           }`}
         >
+          {isFailed && (
+            <Ionicons
+              name="return-down-back"
+              size={10}
+              color="#ef4444"
+              style={{ marginRight: 4 }}
+            />
+          )}
           <Text
-            className={`text-xs font-bold ${
+            className={`text-[10px] font-bold uppercase ${
               isPending
                 ? "text-yellow-500"
                 : isFailed
@@ -43,33 +60,43 @@ export const JobCard = ({ job }: { job: any }) => {
                   : "text-green-500"
             }`}
           >
-            {job.status}
+            {isPending ? "En cours" : isFailed ? "Remboursé" : "Terminé"}
           </Text>
         </View>
       </View>
 
-      {/* Contenu */}
+      {/* CONTENU */}
       <View className="mt-2">
         {isPending ? (
           <View className="flex-row items-center">
             <ActivityIndicator size="small" color="#fbbf24" className="mr-2" />
-            <Text className="text-zinc-300">Analyse en cours par l'IA...</Text>
+            <Text className="text-zinc-300 text-sm">
+              IA en cours de réflexion...
+            </Text>
           </View>
         ) : isFailed ? (
-          <Text className="text-red-400">
-            Une erreur est survenue lors de l'analyse.
-          </Text>
+          <View>
+            {/* Titre de l'erreur */}
+            <Text className="text-red-400 font-bold text-base mb-1">
+              Échec de l'analyse
+            </Text>
+            {/* Message d'erreur (venant de la DB) */}
+            <Text className="text-red-400/70 text-xs" numberOfLines={2}>
+              {job.error || "Une erreur technique est survenue."}
+            </Text>
+          </View>
         ) : (
           <View>
             <Text
               className="text-white font-medium text-lg mb-1"
               numberOfLines={1}
             >
-              {/* On suppose que ton JSON result contient un "title" ou "summary" */}
-              {job.result?.structured_report.project_name || "Analyse terminée"}
+              {job.result?.structured_report?.project_name ||
+                "Analyse terminée"}
             </Text>
             <Text className="text-zinc-400 text-sm" numberOfLines={2}>
-              {job.result?.summary || "Cliquez pour voir les détails..."}
+              {job.result?.structured_report?.general_notes ||
+                "Cliquez pour voir le rapport complet."}
             </Text>
           </View>
         )}

@@ -12,7 +12,7 @@ export default function TabLayout() {
           backgroundColor: "#09090b", // Zinc 950 (Ton background)
           borderTopWidth: 0, // Pas de ligne de séparation moche
           elevation: 0, // Pas d'ombre sur Android
-          height: 60,
+          height: 80,
           paddingBottom: 8,
           paddingTop: 8,
         },

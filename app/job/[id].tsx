@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
+import Markdown from "react-native-markdown-display";
 import { useEffect, useState } from "react";
 import {
   View,
@@ -42,7 +43,7 @@ export default function JobDetailScreen() {
       return res.data;
     },
     enabled: !!id,
-  });
+  },);
 
   const handleCopy = async (text: string) => {
     await Clipboard.setStringAsync(text);
@@ -103,6 +104,7 @@ export default function JobDetailScreen() {
   }
 
   const isCompleted = job.status === "COMPLETED";
+  const isFailed = job.status === "FAILED";
   const report = job.result || {};
 
   return (
@@ -178,7 +180,45 @@ export default function JobDetailScreen() {
           )}
 
           {/* CONTENU DES ONGLETS */}
-          {isCompleted ? (
+          {/* CAS 1 : ÉCHEC / REMBOURSÉ */}
+          {isFailed ? (
+            <View className="p-6 items-center justify-center mt-10">
+              <View className="bg-red-500/10 p-6 rounded-full mb-6">
+                <Ionicons name="alert-circle" size={64} color="#ef4444" />
+              </View>
+
+              <Text className="text-white text-2xl font-bold mb-2 text-center">
+                Analyse échouée
+              </Text>
+
+              <Text className="text-zinc-400 text-center mb-8 px-4 leading-6">
+                Nous n'avons pas pu traiter votre fichier audio correctement.
+              </Text>
+
+              {/* La preuve du remboursement */}
+              <View className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex-row items-center w-full">
+                <View className="bg-green-500/20 p-2 rounded-full mr-4">
+                  <Ionicons name="cash-outline" size={24} color="#4ade80" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-white font-bold text-base">
+                    Crédit remboursé
+                  </Text>
+                  <Text className="text-zinc-500 text-xs">
+                    Votre solde a été automatiquement recrédité.
+                  </Text>
+                </View>
+              </View>
+
+              {/* Bouton retour */}
+              <TouchableOpacity
+                onPress={() => router.back()}
+                className="mt-12 bg-zinc-800 py-4 px-8 rounded-full"
+              >
+                <Text className="text-white font-bold">Retour à la liste</Text>
+              </TouchableOpacity>
+            </View>
+          ) : isCompleted ? (
             <View>
               {/* TAB 1: SYNTHÈSE (STRUCTURED REPORT) */}
               {activeTab === "report" && (
@@ -190,16 +230,6 @@ export default function JobDetailScreen() {
                     </Text>
                     <Text className="text-white text-lg font-bold leading-6">
                       {report.structured_report.project_name || "Analyse Audio"}
-                    </Text>
-                  </View>
-
-                  <View className="bg-surface p-4 rounded-xl border border-zinc-800">
-                    <Text className="text-primary font-bold mb-2 uppercase text-xs tracking-wider">
-                      Résumé
-                    </Text>
-                    <Text className="text-zinc-300 leading-6">
-                      {report.structured_report?.formatted_report ||
-                        "Aucun résumé disponible."}
                     </Text>
                   </View>
 
@@ -252,6 +282,69 @@ export default function JobDetailScreen() {
                           </View>
                         ),
                       )}
+                    </View>
+                  )}
+
+                  {/* LE COMPTE RENDU EN MARKDOWN */}
+                  {/* On utilise formatted_report s'il existe (c'est lui qui contient le MD) */}
+                  {report.structured_report?.formatted_report && (
+                    <View className="bg-surface p-4 rounded-xl border border-zinc-800">
+                      <Text className="text-primary font-bold mb-2 uppercase text-xs tracking-wider">
+                        Résumé
+                      </Text>
+                      <Markdown
+                        style={{
+                          // COULEURS DARK MODE OBLIGATOIRES
+                          body: {
+                            color: "#d4d4d8",
+                            fontSize: 16,
+                            lineHeight: 24,
+                          }, // text-zinc-300
+                          heading1: {
+                            color: "#ffffff",
+                            fontSize: 24,
+                            fontWeight: "bold",
+                            marginBottom: 10,
+                            marginTop: 20,
+                          },
+                          heading2: {
+                            color: "#ffffff",
+                            fontSize: 20,
+                            fontWeight: "bold",
+                            marginBottom: 10,
+                            marginTop: 15,
+                          },
+                          heading3: {
+                            color: "#3b82f6",
+                            fontSize: 18,
+                            fontWeight: "bold",
+                            marginBottom: 5,
+                            marginTop: 10,
+                          }, // Primary color
+                          strong: { color: "#ffffff", fontWeight: "bold" },
+                          em: { color: "#a1a1aa", fontStyle: "italic" },
+                          blockquote: {
+                            backgroundColor: "#27272a",
+                            borderLeftColor: "#3b82f6",
+                            borderLeftWidth: 4,
+                            paddingLeft: 10,
+                            color: "#a1a1aa",
+                          },
+                          bullet_list: { marginBottom: 10 },
+                          ordered_list: { marginBottom: 10 },
+                          bullet_list_icon: {
+                            color: "#3b82f6",
+                            fontSize: 20,
+                          }, // Les puces en bleu
+                          bullet_list_content: {
+                            fontSize: 16,
+                            lineHeight: 24,
+                          },
+                          paragraph: { marginTop: 0, marginBottom: 10 },
+                        }}
+                      >
+                        {report.structured_report.formatted_report}
+                      </Markdown>
                     </View>
                   )}
                 </View>

@@ -6,6 +6,8 @@ import { View, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useAuthStore } from "../src/store/authStore";
 import "../global.css";
+import { usePushNotifications } from "../src/hooks/usePushNotifications";
+import * as Notifications from "expo-notifications";
 
 const queryClient = new QueryClient();
 
@@ -15,13 +17,35 @@ function RootLayoutNav() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
 
+  usePushNotifications();
+
   // 1. Phase d'initialisation : On vérifie le token au lancement
   useEffect(() => {
     const init = async () => {
-      await checkAuth(); // Lit le SecureStore
-      setIsReady(true); // Dit à l'app qu'elle peut s'afficher
+      await checkAuth();
+      setIsReady(true);
     };
     init();
+  }, []);
+
+  useEffect(() => {
+    // Écouteur de clic sur notification
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const jobId = response.notification.request.content.data.jobId;
+
+        if (jobId) {
+          // On navigue vers la page de détail
+          // Note: router.push peut nécessiter d'être dans un setTimeout ou d'attendre que l'app soit prête
+          router.push({
+            pathname: "/job/[id]",
+            params: { id: jobId },
+          } as any);
+        }
+      },
+    );
+
+    return () => subscription.remove();
   }, []);
 
   // 2. Phase de Protection des routes
@@ -53,8 +77,10 @@ function RootLayoutNav() {
   }
 
   return (
-    <>
-      <StatusBar style="light" /> {/* Texte blanc pour fond noir */}
+    <View style={{ flex: 1, backgroundColor: "#09090b" }}>
+      {" "}
+      <StatusBar style="light" />
+      {/* Texte blanc pour fond noir */}
       <Stack
         screenOptions={{
           headerShown: false,
@@ -68,12 +94,11 @@ function RootLayoutNav() {
           name="paywall"
           options={{
             presentation: "modal",
-            // Sur iOS, ça fait une jolie animation de carte qui monte
           }}
         />
         <Stack.Screen name="(auth)" />
       </Stack>
-    </>
+    </View>
   );
 }
 
