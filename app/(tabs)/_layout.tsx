@@ -50,7 +50,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="profile"
         options={{
           tabBarIcon: ({ color, focused }) => (
             <View className={` rounded-xl ${focused ? "bg-blue-500/10" : ""}`}>

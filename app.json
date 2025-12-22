@@ -4,12 +4,12 @@
     "slug": "kaptur-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/kaptur_logo.png",
     "scheme": "kapturapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/kaptur_splash_screen.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },

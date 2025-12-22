@@ -175,7 +175,6 @@ export default function JobDetailScreen() {
                       : tab === "transcript"
                         ? "Texte Brut"
                         : "Éditeur"}{" "}
-                    {/* Renommé ici */}
                   </Text>
                 </TouchableOpacity>
               ))}
