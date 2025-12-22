@@ -13,7 +13,7 @@ import { JobCard } from "../../src/components/JobCard";
 import { useRouter, Href } from "expo-router";
 import { useMe } from "../../src/hooks/useMe";
 import { useRef, useEffect } from "react";
-// On définit une petite interface pour éviter les 'any' partout
+
 interface Job {
   id: string;
   status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";

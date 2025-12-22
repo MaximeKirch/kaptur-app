@@ -21,30 +21,28 @@ export default function RegisterScreen() {
   const loginAction = useAuthStore((state) => state.login);
   const setCredits = useUserStore((state) => state.setCredits);
 
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!email || !password || !name) {
+    if (!email || !password) {
       Alert.alert("Erreur", "Tous les champs sont obligatoires");
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await api.post("/auth/register", {
+      const response = await api.post("/auth/signup", {
         email,
         password,
-        name,
       });
 
       const { auth, user } = response.data;
 
       if (auth.accessToken) {
         await loginAction(auth.accessToken, user);
-        setCredits(user.credits ?? 3);
+        setCredits(user.credits ?? 5);
         router.replace("/(tabs)");
       } else {
         Alert.alert("Succès", "Compte créé ! Connectez-vous maintenant.");
@@ -89,24 +87,9 @@ export default function RegisterScreen() {
           </Text>
         </View>
 
-        <View className="space-y-4">
-          {/* Name Input */}
-          <View>
-            <Text className="text-zinc-400 mb-2 ml-1 text-sm font-medium">
-              Nom complet
-            </Text>
-            <TextInput
-              className="bg-surface border border-zinc-800 rounded-xl px-4 py-4 text-white text-base focus:border-primary"
-              placeholder="Elon Musk"
-              placeholderTextColor="#52525b"
-              autoCapitalize="words"
-              value={name}
-              onChangeText={setName}
-            />
-          </View>
-
+        <View className="space-y-6">
           {/* Email Input */}
-          <View>
+          <View className="mb-4">
             <Text className="text-zinc-400 mb-2 ml-1 text-sm font-medium">
               Email
             </Text>
@@ -122,7 +105,7 @@ export default function RegisterScreen() {
           </View>
 
           {/* Password Input */}
-          <View>
+          <View className="mb-4">
             <Text className="text-zinc-400 mb-2 ml-1 text-sm font-medium">
               Mot de passe
             </Text>
@@ -154,7 +137,7 @@ export default function RegisterScreen() {
           </TouchableOpacity>
 
           <Text className="text-zinc-500 text-xs text-center mt-4">
-            En vous inscrivant, vous obtenez 3 crédits offerts pour tester
+            En vous inscrivant, vous obtenez 5 crédits offerts pour tester
             l'application.
           </Text>
         </View>

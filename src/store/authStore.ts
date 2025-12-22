@@ -15,7 +15,6 @@ interface AuthState {
 
 const TOKEN_KEY = "kaptur_auth_token";
 
-// 1. AJOUT DE 'get' ICI
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   isAuthenticated: false,
