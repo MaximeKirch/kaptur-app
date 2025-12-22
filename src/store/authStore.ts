@@ -13,7 +13,7 @@ interface AuthState {
   checkAuth: () => Promise<void>;
 }
 
-const TOKEN_KEY = "kaptur_auth_token";
+const TOKEN_KEY = "relevo_auth_token";
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,

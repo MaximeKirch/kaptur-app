@@ -147,7 +147,7 @@ export default function ProfileScreen() {
           <MenuItem
             icon="mail-outline"
             label="Contacter le support"
-            onPress={() => openLink("mailto:support@kaptur.app")}
+            onPress={() => openLink("mailto:support@relevo.app")}
           />
         </View>
 
@@ -170,7 +170,7 @@ export default function ProfileScreen() {
         </View>
 
         <Text className="text-zinc-700 text-center text-xs mb-8">
-          Kaptur v1.0.0
+          Relevo v1.0.0
         </Text>
       </ScrollView>
     </SafeAreaView>

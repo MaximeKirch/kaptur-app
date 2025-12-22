@@ -13,7 +13,7 @@ export const api = axios.create({
 
 api.interceptors.request.use(async (config) => {
   try {
-    const token = await SecureStore.getItemAsync("kaptur_auth_token");
+    const token = await SecureStore.getItemAsync("relevo_auth_token");
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

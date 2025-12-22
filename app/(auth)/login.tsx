@@ -58,7 +58,7 @@ export default function LoginScreen() {
       className="flex-1 bg-background justify-center px-6"
     >
       <View className="mb-12">
-        <Text className="text-4xl font-bold text-white mb-2">Kaptur</Text>
+        <Text className="text-4xl font-bold text-white mb-2">Relevo</Text>
         <Text className="text-text-muted text-lg">
           Générez vos comptes rendu de chantier avec l'aide de l'IA.
         </Text>
@@ -72,7 +72,7 @@ export default function LoginScreen() {
           </Text>
           <TextInput
             className="bg-surface border border-border rounded-xl px-4 py-4 text-white text-base"
-            placeholder="hello@kaptur.app"
+            placeholder="hello@relevo.app"
             placeholderTextColor="#52525b" // Zinc 600
             keyboardType="email-address"
             autoCapitalize="none"

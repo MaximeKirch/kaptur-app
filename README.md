@@ -1,6 +1,6 @@
-# 📱 Kaptur - Mobile Client
+# 📱 Relevo - Mobile Client
 
-Le client mobile officiel de **Kaptur**, l'architecte vocal intelligent.
+Le client mobile officiel de **Relevo**, l'architecte vocal intelligent.
 Cette application permet aux professionnels du BTP d'enregistrer des comptes rendus de chantier, de les envoyer vers notre Gateway IA, et de recevoir des rapports structurés, tarifés et exportables.
 
 L'application est construite avec une approche **"Offline First"** pour l'interface et **"Optimistic UI"** pour la gestion des états.
@@ -84,7 +84,7 @@ src/
 ```bash
 # Cloner le repo
 git clone <votre-repo>
-cd kaptur-app
+cd relevo-app
 
 # Installer les dépendances
 npm install

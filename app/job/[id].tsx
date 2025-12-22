@@ -89,7 +89,7 @@ export default function JobDetailScreen() {
           job?.result?.raw_transcription;
     if (!messageToShare) return;
     try {
-      await Share.share({ message: messageToShare, title: "Rapport Kaptur" });
+      await Share.share({ message: messageToShare, title: "Rapport Relevo" });
     } catch (error) {
       console.error(error);
     }
@@ -131,7 +131,7 @@ export default function JobDetailScreen() {
             // Partage Texte simple
             await Share.share({
               message: contentText,
-              title: "Rapport Kaptur",
+              title: "Rapport Relevo",
             });
           } else if (buttonIndex === 2) {
             // Génération PDF

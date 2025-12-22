@@ -14,7 +14,7 @@ export const generateAndSharePDF = async (data: ReportData) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Rapport Kaptur</title>
+        <title>Rapport Relevo</title>
         <style>
             body {
                 font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -69,7 +69,7 @@ export const generateAndSharePDF = async (data: ReportData) => {
     </head>
     <body>
         <div class="header">
-            <div class="brand">KAPTUR<span>.</span></div>
+            <div class="brand">RELEVO<span>.</span></div>
             <div class="meta">
                 <p><strong>Projet :</strong> ${data.projectName}</p>
                 <p><strong>Date :</strong> ${data.date}</p>
@@ -81,7 +81,7 @@ export const generateAndSharePDF = async (data: ReportData) => {
         </div>
 
         <div class="footer">
-            Généré avec Kaptur
+            Généré avec Relevo
         </div>
     </body>
     </html>

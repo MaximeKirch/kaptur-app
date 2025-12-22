@@ -1,32 +1,32 @@
 {
   "expo": {
-    "name": "Kaptur",
-    "slug": "kaptur-app",
+    "name": "Relevo",
+    "slug": "relevo-app",
     "version": "1.0.0",
     "orientation": "portrait",
 
-    "icon": "./assets/images/kaptur_icon.png",
+    "icon": "./assets/images/relevo_icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#000000",
 
     "splash": {
-      "image": "./assets/images/kaptur_splash_screen.png",
+      "image": "./assets/images/relevo_splash_screen.png",
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
 
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.maximekirch.kaptur",
+      "bundleIdentifier": "com.maximekirch.relevo",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Kaptur a besoin de votre micro pour enregistrer vos notes vocales à analyser.",
+        "NSMicrophoneUsageDescription": "Relevo a besoin de votre micro pour enregistrer vos notes vocales à analyser.",
         "ITSAppUsesNonExemptEncryption": false,
         "UIUserInterfaceStyle": "Dark"
       }
     },
 
     "android": {
-      "package": "com.maximekirch.kaptur",
+      "package": "com.maximekirch.relevo",
       "permissions": [
         "AUDIO_RECORDING",
         "android.permission.RECORD_AUDIO",
@@ -40,7 +40,7 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Kaptur a besoin de votre micro pour enregistrer vos notes vocales à analyser."
+          "microphonePermission": "Relevo a besoin de votre micro pour enregistrer vos notes vocales à analyser."
         }
       ]
     ],

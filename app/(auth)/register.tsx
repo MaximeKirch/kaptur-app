@@ -82,7 +82,7 @@ export default function RegisterScreen() {
             Créer un compte
           </Text>
           <Text className="text-zinc-400 text-lg">
-            Rejoignez Kaptur et commencez à générer vos comptes rendu de
+            Rejoignez Relevo et commencez à générer vos comptes rendu de
             chantier.
           </Text>
         </View>
@@ -95,7 +95,7 @@ export default function RegisterScreen() {
             </Text>
             <TextInput
               className="bg-surface border border-zinc-800 rounded-xl px-4 py-4 text-white text-base focus:border-primary"
-              placeholder="elon@kaptur.app"
+              placeholder="elon@relevo.app"
               placeholderTextColor="#52525b"
               keyboardType="email-address"
               autoCapitalize="none"

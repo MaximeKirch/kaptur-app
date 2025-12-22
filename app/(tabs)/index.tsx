@@ -82,7 +82,7 @@ export default function HomeScreen() {
         {/* HEADER */}
         <View className="flex-row justify-between items-center mb-8">
           <Text className="text-3xl font-bold text-white tracking-tight">
-            Kaptur
+            Relevo
           </Text>
           <CreditBadge />
         </View>
