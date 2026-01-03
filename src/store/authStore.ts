@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { useUserStore } from "./userStore";
 import { api } from "../services/api";
 import * as SecureStore from "expo-secure-store";
+import Purchases from "react-native-purchases";
 
 interface AuthState {
   token: string | null;
@@ -23,11 +24,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (token, user) => {
     await SecureStore.setItemAsync(TOKEN_KEY, token);
     set({ token, user, isAuthenticated: true });
+    if (user?.id) {
+      try {
+        await Purchases.logIn(user.id);
+        console.log("🔗 RevenueCat lié à l'utilisateur :", user.id);
+      } catch (e) {
+        console.error("Erreur liaison RevenueCat", e);
+      }
+    }
   },
 
   logout: async () => {
     await SecureStore.deleteItemAsync(TOKEN_KEY);
     set({ token: null, user: null, isAuthenticated: false });
+    await Purchases.logOut();
   },
 
   checkAuth: async () => {

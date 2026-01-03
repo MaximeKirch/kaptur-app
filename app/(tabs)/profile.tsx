@@ -6,6 +6,7 @@ import {
   Alert,
   Linking,
   ScrollView,
+  Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -123,9 +124,15 @@ export default function ProfileScreen() {
           </Text>
 
           <View className="bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
-            <Text className="text-primary font-bold">
-              Solde : {credits} crédits ⚡
-            </Text>
+            <Pressable
+              onPress={() => {
+                router.push("/paywall");
+              }}
+            >
+              <Text className="text-primary font-bold">
+                Solde : {credits} crédits ⚡
+              </Text>
+            </Pressable>
           </View>
         </View>
 

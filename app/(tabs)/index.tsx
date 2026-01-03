@@ -1,19 +1,22 @@
 import { View, Text, SafeAreaView, Alert } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+// On n'a plus besoin de useEffect pour calculer le coût, ni de useState pour le coût
+import { useState } from "react";
 
 // Stores & Hooks
 import { useUserStore } from "../../src/store/userStore";
 import { useCreateJob } from "../../src/hooks/useCreateJob";
 import { useAudioRecorder } from "../../src/hooks/useAudioRecorder";
-import { calculateCost } from "../../src/utils/audioUtils";
+// On supprime l'import de calculateCost car on ne fait plus de maths
 
 // UI Components
 import { CreditBadge } from "../../src/components/ui/CreditBadge";
 import { IdleView } from "../../src/components/recorder/IdleView";
 import { RecordingView } from "../../src/components/recorder/RecordingView";
 import { ReviewView } from "../../src/components/recorder/ReviewView";
+
+const FIXED_COST: number = 1; // Stratégie Flat Fee
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -32,18 +35,13 @@ export default function HomeScreen() {
     stopRecording,
     importFile,
     reset,
+    maxDuration, // On récupère la constante maxDuration du hook si besoin pour l'UI
   } = useAudioRecorder();
+
   const { mutate: createJob, isPending } = useCreateJob();
 
-  // Local State (Calculé)
-  const [cost, setCost] = useState(0);
-
-  // Mise à jour du coût en temps réel
-  useEffect(() => {
-    setCost(calculateCost(duration));
-  }, [duration]);
-
-  const hasEnoughCredits = credits >= cost;
+  // Plus de calcul savant. 1 = 1.
+  const hasEnoughCredits = credits >= FIXED_COST;
 
   // --- LOGIQUE MÉTIER ---
 
@@ -56,6 +54,7 @@ export default function HomeScreen() {
     const type = match ? `audio/${match[1]}` : `audio/m4a`;
 
     formData.append("audio", { uri: audioUri, name: filename, type } as any);
+    // On envoie quand même la durée pour les stats backend, même si ça ne change pas le prix
     formData.append("estimated_duration", duration.toString());
 
     createJob(formData, {
@@ -67,12 +66,7 @@ export default function HomeScreen() {
         queryClient.invalidateQueries({ queryKey: ["my-jobs"] });
         router.push("/(tabs)/history");
       },
-      onError: (error: any) => {
-        Alert.alert(
-          "Erreur",
-          error.response?.data?.message || "L'envoi a échoué",
-        );
-      },
+      // L'erreur est gérée dans le hook useCreateJob, mais on peut garder un fallback ici
     });
   };
 
@@ -96,7 +90,7 @@ export default function HomeScreen() {
           {status === "recording" && (
             <RecordingView
               duration={duration}
-              cost={cost}
+              cost={FIXED_COST} // On passe 1
               onStop={stopRecording}
             />
           )}
@@ -105,7 +99,7 @@ export default function HomeScreen() {
             <ReviewView
               uri={audioUri}
               duration={duration}
-              cost={cost}
+              cost={FIXED_COST}
               hasCredits={hasEnoughCredits}
               isSending={isPending}
               onReset={reset}

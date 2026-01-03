@@ -8,7 +8,7 @@ interface UserState {
 }
 
 export const useUserStore = create<UserState>((set) => ({
-  credits: 0, // Par défaut 0 en attendant que le profil soit chargé
+  credits: 0,
   setCredits: (count) => set({ credits: count }),
   // Optimistic update (on baisse le compteur visuellement tout de suite)
   decrementCredits: () =>

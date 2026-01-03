@@ -1,10 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Audio } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
 import { Alert } from "react-native";
 import { getAudioDurationInSeconds } from "../utils/audioUtils";
 
 export type RecordingStatus = "idle" | "recording" | "review";
+
+const MAX_DURATION = 900; // 15 minutes en secondes
 
 export const useAudioRecorder = () => {
   const [permissionResponse, requestPermission] = Audio.usePermissions();
@@ -13,12 +15,30 @@ export const useAudioRecorder = () => {
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [duration, setDuration] = useState(0);
 
-  // Gestion du Timer
+  // Ref pour accéder à l'instance recording dans le setInterval sans dépendance
+  const recordingRef = useRef<Audio.Recording | null>(null);
+
+  // Gestion du Timer et de la Limite 15 min
   useEffect(() => {
     let interval: NodeJS.Timeout;
+
     if (status === "recording") {
-      interval = setInterval(() => setDuration((d) => d + 1), 1000);
+      interval = setInterval(() => {
+        setDuration((prevDuration) => {
+          // SÉCURITÉ : Arrêt automatique à 15 minutes
+          if (prevDuration >= MAX_DURATION) {
+            stopRecording(); // On arrête proprement
+            Alert.alert(
+              "Limite atteinte",
+              "L'enregistrement est limité à 15 minutes pour garantir la qualité du rapport.",
+            );
+            return prevDuration;
+          }
+          return prevDuration + 1;
+        });
+      }, 1000);
     }
+
     return () => clearInterval(interval);
   }, [status]);
 
@@ -31,10 +51,13 @@ export const useAudioRecorder = () => {
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
-      const { recording } = await Audio.Recording.createAsync(
+      const { recording: newRecording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY,
       );
-      setRecording(recording);
+
+      setRecording(newRecording);
+      recordingRef.current = newRecording; // Mise à jour de la ref
+
       setStatus("recording");
       setDuration(0);
     } catch (err) {
@@ -43,11 +66,22 @@ export const useAudioRecorder = () => {
   };
 
   const stopRecording = async () => {
-    if (!recording) return;
+    // On utilise la ref ou le state, selon ce qui est disponible
+    const recorder = recording || recordingRef.current;
+    if (!recorder) return;
+
+    try {
+      await recorder.stopAndUnloadAsync();
+    } catch (error) {
+      console.log("Erreur lors de l'arrêt", error);
+    }
+
+    const uri = recorder.getURI();
+
     setRecording(null);
-    await recording.stopAndUnloadAsync();
+    recordingRef.current = null;
     await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
-    const uri = recording.getURI();
+
     if (uri) {
       setAudioUri(uri);
       setStatus("review");
@@ -61,9 +95,15 @@ export const useAudioRecorder = () => {
     });
     if (!result.canceled) {
       const file = result.assets[0];
-      setAudioUri(file.uri);
-      // Pour un fichier importé, on essaie de récupérer sa durée réelle
+
+      // Check durée import
       const d = await getAudioDurationInSeconds(file.uri);
+      if (d > MAX_DURATION) {
+        Alert.alert("Fichier trop long", "La limite est de 15 minutes.");
+        return;
+      }
+
+      setAudioUri(file.uri);
       setDuration(d || 0);
       setStatus("review");
     }
@@ -74,6 +114,7 @@ export const useAudioRecorder = () => {
     setDuration(0);
     setStatus("idle");
     setRecording(null);
+    recordingRef.current = null;
   }, []);
 
   return {
@@ -84,5 +125,6 @@ export const useAudioRecorder = () => {
     stopRecording,
     importFile,
     reset,
+    maxDuration: MAX_DURATION,
   };
 };

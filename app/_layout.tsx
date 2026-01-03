@@ -2,12 +2,13 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useAuthStore } from "../src/store/authStore";
 import "../global.css";
 import { usePushNotifications } from "../src/hooks/usePushNotifications";
 import * as Notifications from "expo-notifications";
+import Purchases, { LOG_LEVEL } from "react-native-purchases";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,20 @@ function RootLayoutNav() {
     // NOTE : On a supprimé la redirection automatique vers /paywall.
     // L'utilisateur est libre de naviguer tant qu'il a des crédits.
   }, [isAuthenticated, segments, isReady]);
+
+  useEffect(() => {
+    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+
+    if (Platform.OS === "ios") {
+      Purchases.configure({
+        apiKey: "test_uVWXbnqwCNxjBwHIaaBwdIBWPCg",
+      });
+    } else if (Platform.OS === "android") {
+      Purchases.configure({
+        apiKey: "test_uVWXbnqwCNxjBwHIaaBwdIBWPCg",
+      });
+    }
+  }, []);
 
   // Loader pendant l'initialisation (très court)
   if (!isReady) {
