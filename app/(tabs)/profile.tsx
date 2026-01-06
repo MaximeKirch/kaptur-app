@@ -157,7 +157,7 @@ export default function ProfileScreen() {
           <MenuItem
             icon="mail-outline"
             label="Contacter le support"
-            onPress={() => openLink("mailto:support@relevo.app")}
+            onPress={() => openLink("mailto:maxime.kirch@gmail.com")}
           />
         </View>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Audio } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
-import { Alert } from "react-native";
+import { Alert, Linking, Platform } from "react-native";
 import { getAudioDurationInSeconds } from "../utils/audioUtils";
 
 export type RecordingStatus = "idle" | "recording" | "review";
@@ -44,9 +44,33 @@ export const useAudioRecorder = () => {
 
   const startRecording = async () => {
     try {
+      // Vérifier et demander la permission si nécessaire
       if (permissionResponse?.status !== "granted") {
-        await requestPermission();
+        const { status } = await requestPermission();
+
+        // Si l'utilisateur refuse la permission
+        if (status !== "granted") {
+          Alert.alert(
+            "Permission microphone requise",
+            "Relevo a besoin d'accéder à votre microphone pour enregistrer vos comptes rendus. C'est le cœur de l'application.\n\nVeuillez autoriser l'accès dans les paramètres.",
+            [
+              { text: "Annuler", style: "cancel" },
+              {
+                text: "Ouvrir les paramètres",
+                onPress: () => {
+                  if (Platform.OS === "ios") {
+                    Linking.openURL("app-settings:");
+                  } else {
+                    Linking.openSettings();
+                  }
+                },
+              },
+            ]
+          );
+          return;
+        }
       }
+
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
