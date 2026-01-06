@@ -106,7 +106,10 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1 px-6 pt-6">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        className="flex-1 px-6 pt-6"
+      >
         <Text className="text-3xl font-bold text-white mb-8">Mon Profil</Text>
 
         {/* --- CARTE IDENTITÉ --- */}
@@ -144,12 +147,12 @@ export default function ProfileScreen() {
           <MenuItem
             icon="document-text-outline"
             label="Conditions d'utilisation"
-            onPress={() => openLink("https://google.com")} // À REMPLACER
+            onPress={() => openLink("https://getrelevo.com/cgu")}
           />
           <MenuItem
             icon="shield-checkmark-outline"
             label="Politique de confidentialité"
-            onPress={() => openLink("https://google.com")} // À REMPLACER
+            onPress={() => openLink("https://getrelevo.com/privacy")}
           />
           <MenuItem
             icon="mail-outline"
