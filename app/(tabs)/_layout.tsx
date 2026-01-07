@@ -1,40 +1,44 @@
 // app/(tabs)/_layout.tsx
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { View } from "react-native";
 import { useEffect } from "react";
 import { usePushNotifications } from "../../src/hooks/usePushNotifications";
-import Purchases, { LOG_LEVEL } from "react-native-purchases";
+import { useAuthStore } from "../../src/store/authStore";
+import * as Notifications from "expo-notifications";
 
 export default function TabLayout() {
-  // Initialiser les notifications maintenant que l'utilisateur est connecté et sur la page d'accueil
-  usePushNotifications({ enabled: true });
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const router = useRouter();
 
-  // Initialiser RevenueCat maintenant que l'utilisateur est connecté
+  // Initialiser les notifications SEULEMENT si l'utilisateur est authentifié
+  usePushNotifications({ enabled: isAuthenticated });
+
+  // Écouteur de clic sur notification (seulement si authentifié)
   useEffect(() => {
-    const setupPurchases = async () => {
-      try {
-        Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+    if (!isAuthenticated) return;
 
-        // On vérifie si déjà configuré pour éviter de reconfigurer
-        const isConfigured = await Purchases.isConfigured();
-        if (!isConfigured) {
-          const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY;
-          if (!apiKey) {
-            console.error("RevenueCat API key is missing");
-            return;
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        try {
+          const data = response?.notification?.request?.content?.data;
+          const jobId = data?.jobId;
+
+          if (jobId) {
+            // Navigation vers la page de détail du job
+            router.push({
+              pathname: "/job/[id]",
+              params: { id: jobId },
+            } as any);
           }
-
-          Purchases.configure({ apiKey });
-          console.log("✅ RevenueCat configured successfully");
+        } catch (error) {
+          console.error("Error handling notification response:", error);
         }
-      } catch (error) {
-        console.error("❌ Error configuring RevenueCat:", error);
-      }
-    };
+      },
+    );
 
-    setupPurchases();
-  }, []);
+    return () => subscription.remove();
+  }, [isAuthenticated]);
 
   return (
     <Tabs

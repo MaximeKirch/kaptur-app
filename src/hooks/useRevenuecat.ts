@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Alert } from "react-native";
-import Purchases, { PurchasesPackage } from "react-native-purchases";
+import Purchases, { PurchasesPackage, LOG_LEVEL } from "react-native-purchases";
 import { useUserStore } from "../store/userStore";
 import { api } from "../services/api";
 
@@ -9,10 +9,26 @@ export const useRevenueCat = () => {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const setCredits = useUserStore((state) => state.setCredits);
 
-  // --- C'EST ICI QUE ÇA MANQUAIT ---
+  // Initialiser RevenueCat puis charger les offres
   useEffect(() => {
-    const loadOfferings = async () => {
+    const initAndLoadOfferings = async () => {
       try {
+        // 1. D'abord, configurer RevenueCat si ce n'est pas encore fait
+        Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+        const isConfigured = await Purchases.isConfigured();
+
+        if (!isConfigured) {
+          const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY;
+          if (!apiKey) {
+            console.error("RevenueCat API key is missing");
+            return;
+          }
+
+          Purchases.configure({ apiKey });
+          console.log("✅ RevenueCat configured in paywall");
+        }
+
+        // 2. Ensuite, charger les offres
         const offerings = await Purchases.getOfferings();
 
         // On vérifie qu'on a bien une "current" offering et qu'elle n'est pas vide
@@ -31,7 +47,7 @@ export const useRevenueCat = () => {
       }
     };
 
-    loadOfferings();
+    initAndLoadOfferings();
   }, []);
   // ----------------------------------
 

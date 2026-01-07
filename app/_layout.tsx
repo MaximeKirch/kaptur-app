@@ -7,7 +7,6 @@ import { StatusBar } from "expo-status-bar";
 import { useAuthStore } from "../src/store/authStore";
 import { useUserStore } from "../src/store/userStore";
 import "../global.css";
-import * as Notifications from "expo-notifications";
 
 const queryClient = new QueryClient();
 
@@ -17,7 +16,6 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
-  const [modulesInitialized, setModulesInitialized] = useState(false);
 
   // 1. Phase d'initialisation : On vérifie le token et l'onboarding au lancement
   // useEffect(() => {
@@ -48,20 +46,16 @@ function RootLayoutNav() {
 
         if (!isMounted) return;
 
-        // 4. Maintenant on peut initialiser les modules natifs de manière séquentielle
+        // 4. Initialiser les stores (auth et onboarding)
         checkAuth().catch((e) => console.log("Auth check failed:", e));
         checkOnboardingStatus().catch((e) =>
           console.log("Onboarding check failed:", e),
         );
-
-        // 5. Marquer les modules comme initialisés (pour activer les notifications, etc.)
-        setModulesInitialized(true);
       } catch (error) {
         console.error("Critical init error:", error);
         // On libère quand même l'UI pour éviter un écran blanc infini
         if (isMounted) {
           setIsReady(true);
-          setModulesInitialized(true);
         }
       }
     };
@@ -72,32 +66,6 @@ function RootLayoutNav() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!modulesInitialized) return;
-
-    // Écouteur de clic sur notification (seulement après l'initialisation des modules)
-    const subscription = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        try {
-          const data = response?.notification?.request?.content?.data;
-          const jobId = data?.jobId;
-
-          if (jobId) {
-            // On navigue vers la page de détail
-            // Note: router.push peut nécessiter d'être dans un setTimeout ou d'attendre que l'app soit prête
-            router.push({
-              pathname: "/job/[id]",
-              params: { id: jobId },
-            } as any);
-          }
-        } catch (error) {
-          console.error("Error handling notification response:", error);
-        }
-      },
-    );
-
-    return () => subscription.remove();
-  }, [modulesInitialized]);
 
   // 2. Phase de Protection des routes
   useEffect(() => {
@@ -136,7 +104,6 @@ function RootLayoutNav() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#09090b" }}>
-      {" "}
       <StatusBar style="light" />
       {/* Texte blanc pour fond noir */}
       <Stack
