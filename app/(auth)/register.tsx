@@ -40,8 +40,8 @@ export default function RegisterScreen() {
 
       const { auth, user } = response.data;
 
-      if (auth.accessToken) {
-        await loginAction(auth.accessToken, user);
+      if (auth.accessToken && auth.refreshToken) {
+        await loginAction(auth.accessToken, auth.refreshToken, user);
         setCredits(user.credits ?? 5);
         router.replace("/(tabs)");
       } else {

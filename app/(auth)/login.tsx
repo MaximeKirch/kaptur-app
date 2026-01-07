@@ -35,10 +35,10 @@ export default function LoginScreen() {
       // 1. Appel API
       const response = await api.post("/auth/login", { email, password });
 
-      // 2. Stockage du token via le store
+      // 2. Stockage des tokens via le store
       const { auth, user } = response.data;
 
-      await login(auth.accessToken, user);
+      await login(auth.accessToken, auth.refreshToken, user);
       setCredits(user.credits ?? 0);
 
       // 3. Redirection vers l'app
