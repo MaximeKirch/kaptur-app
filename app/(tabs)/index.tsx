@@ -72,9 +72,8 @@ export default function HomeScreen() {
         `Votre audio dure seulement ${duration} seconde${duration > 1 ? "s" : ""}. Il semble trop court pour contenir un compte rendu exploitable.\n\nVous allez quand même utiliser 1 crédit si vous continuez.\n\nVoulez-vous vraiment analyser cet audio ?`,
         [
           {
-            text: "Réenregistrer",
+            text: "Vérifier l'audio",
             style: "cancel",
-            onPress: () => reset(),
           },
           {
             text: "Analyser quand même",
@@ -90,12 +89,11 @@ export default function HomeScreen() {
     if (isEmpty) {
       Alert.alert(
         "Audio vide ou silencieux",
-        "L'enregistrement semble ne contenir aucun son exploitable. Cela peut arriver si le microphone était coupé ou défaillant.\n\nVous allez quand même utiliser 1 crédit si vous continuez.\n\nVoulez-vous vraiment analyser cet audio ?",
+        "L'enregistrement semble ne contenir aucun son exploitable. Cela peut arriver si le microphone était coupé ou défaillant.\n\nVous pouvez réécouter l'audio pour vérifier avant de l'analyser.\n\nVous allez utiliser 1 crédit si vous continuez.",
         [
           {
-            text: "Réenregistrer",
+            text: "Réécouter",
             style: "cancel",
-            onPress: () => reset(),
           },
           {
             text: "Analyser quand même",

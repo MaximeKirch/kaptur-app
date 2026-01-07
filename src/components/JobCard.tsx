@@ -2,8 +2,9 @@ import { View, Text, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { memo } from "react";
 
-export const JobCard = ({ job }: { job: any }) => {
+const JobCardComponent = ({ job }: { job: any }) => {
   const isPending = job.status === "PENDING" || job.status === "PROCESSING";
   const isFailed = job.status === "FAILED";
   const isCompleted = job.status === "COMPLETED";
@@ -104,3 +105,13 @@ export const JobCard = ({ job }: { job: any }) => {
     </View>
   );
 };
+
+// Mémoïsation du composant pour éviter les re-renders inutiles lors du polling
+// Ne se re-render que si l'id ou le status du job change
+export const JobCard = memo(JobCardComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.job.id === nextProps.job.id &&
+    prevProps.job.status === nextProps.job.status &&
+    prevProps.job.createdAt === nextProps.job.createdAt
+  );
+});

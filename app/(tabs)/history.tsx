@@ -12,7 +12,7 @@ import { api } from "../../src/services/api";
 import { JobCard } from "../../src/components/JobCard";
 import { useRouter, Href } from "expo-router";
 import { useMe } from "../../src/hooks/useMe";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 
 interface Job {
   id: string;
@@ -29,7 +29,7 @@ export default function HistoryScreen() {
   const { refetch: refetchUser } = useMe();
 
   const {
-    data: jobs,
+    data: jobsRaw,
     isLoading,
     refetch: refetchJobs,
     isRefetching,
@@ -51,12 +51,21 @@ export default function HistoryScreen() {
     },
   });
 
+  // Trier les jobs de manière stable pour éviter les sauts visuels lors du polling
+  // Ordre : date décroissante (plus récent en premier)
+  const jobs = jobsRaw
+    ? [...jobsRaw].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+    : [];
+
   // --- REMPLACEMENT : Gestion des effets de bord ---
   useEffect(() => {
-    if (!jobs) return;
+    if (!jobsRaw) return;
 
     // 1. On regarde s'il y a des jobs en cours MAINTENANT
-    const hasPending = jobs.some(
+    const hasPending = jobsRaw.some(
       (j) => j.status === "PENDING" || j.status === "PROCESSING",
     );
 
@@ -70,11 +79,24 @@ export default function HistoryScreen() {
 
     // 3. On met à jour la référence pour le prochain rendu
     wasPendingRef.current = hasPending;
-  }, [jobs]);
+  }, [jobsRaw, refetchUser]);
 
   const handleRefresh = async () => {
     await Promise.all([refetchJobs(), refetchUser()]);
   };
+
+  // Mémoïser le renderItem pour éviter de recréer la fonction à chaque render
+  const renderItem = useCallback(
+    ({ item }: { item: Job }) => (
+      <Pressable
+        className="active:opacity-70"
+        onPress={() => router.push(`/job/${item.id}` as Href)}
+      >
+        <JobCard job={item} />
+      </Pressable>
+    ),
+    [router],
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -95,16 +117,9 @@ export default function HistoryScreen() {
           <FlatList
             data={jobs}
             keyExtractor={(item) => item.id}
+            renderItem={renderItem}
             showsHorizontalScrollIndicator={false}
             showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <Pressable
-                className="active:opacity-70"
-                onPress={() => router.push(`/job/${item.id}` as Href)}
-              >
-                <JobCard job={item} />
-              </Pressable>
-            )}
             refreshControl={
               <RefreshControl
                 refreshing={isRefetching}
@@ -113,6 +128,12 @@ export default function HistoryScreen() {
               />
             }
             contentContainerStyle={{ paddingBottom: 100 }}
+            // Optimisations de performance pour éviter les glitches lors du polling
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            updateCellsBatchingPeriod={50}
+            initialNumToRender={10}
+            windowSize={10}
           />
         )}
       </View>
