@@ -5,6 +5,7 @@ import { Alert, Linking, Platform } from "react-native";
 import { getAudioDurationInSeconds } from "../utils/audioUtils";
 
 export type RecordingStatus = "idle" | "recording" | "review";
+export type AudioSource = "recorded" | "imported";
 
 const MAX_DURATION = 900; // 15 minutes en secondes
 
@@ -14,6 +15,7 @@ export const useAudioRecorder = () => {
   const [status, setStatus] = useState<RecordingStatus>("idle");
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [duration, setDuration] = useState(0);
+  const [audioSource, setAudioSource] = useState<AudioSource | null>(null);
 
   // Ref pour accéder à l'instance recording dans le setInterval sans dépendance
   const recordingRef = useRef<Audio.Recording | null>(null);
@@ -108,6 +110,7 @@ export const useAudioRecorder = () => {
 
     if (uri) {
       setAudioUri(uri);
+      setAudioSource("recorded");
       setStatus("review");
     }
   };
@@ -129,6 +132,7 @@ export const useAudioRecorder = () => {
 
       setAudioUri(file.uri);
       setDuration(d || 0);
+      setAudioSource("imported");
       setStatus("review");
     }
   };
@@ -136,6 +140,7 @@ export const useAudioRecorder = () => {
   const reset = useCallback(() => {
     setAudioUri(null);
     setDuration(0);
+    setAudioSource(null);
     setStatus("idle");
     setRecording(null);
     recordingRef.current = null;
@@ -145,6 +150,7 @@ export const useAudioRecorder = () => {
     status,
     duration,
     audioUri,
+    audioSource,
     startRecording,
     stopRecording,
     importFile,

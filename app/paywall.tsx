@@ -82,13 +82,7 @@ export default function PaywallScreen() {
           <Text className="text-zinc-400 text-center px-4 leading-6">
             Investissez dans votre temps.
             {"\n"}
-            <Text className="text-white font-bold">
-              1 crédit = 1 minute d'enregistrement.
-            </Text>
-            {"\n"}
-            <Text className="text-zinc-500 text-xs">
-              (Décompté à la minute entamée)
-            </Text>
+            <Text className="text-white font-bold">1 crédit = 1 rapport.</Text>
           </Text>
         </View>
 

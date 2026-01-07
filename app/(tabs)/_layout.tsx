@@ -25,9 +25,11 @@ export default function TabLayout() {
         name="history"
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <View className={` rounded-xl ${focused ? "bg-blue-500/10" : ""}`}>
+            <View
+              className={` rounded-xl ${focused ? "bg-blue-500/10 p-0.5" : ""}`}
+            >
               <Ionicons
-                name={focused ? "time" : "time-outline"}
+                name={focused ? "document-text" : "document-text-outline"}
                 size={24}
                 color={color}
               />
@@ -39,9 +41,11 @@ export default function TabLayout() {
         name="index"
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <View className={` rounded-xl ${focused ? "bg-blue-500/10" : ""}`}>
+            <View
+              className={`rounded-xl ${focused ? "bg-blue-500/10 p-0.5" : ""}`}
+            >
               <Ionicons
-                name={focused ? "scan" : "scan-outline"}
+                name={focused ? "mic" : "mic-outline"}
                 size={24}
                 color={color}
               />
@@ -53,7 +57,9 @@ export default function TabLayout() {
         name="profile"
         options={{
           tabBarIcon: ({ color, focused }) => (
-            <View className={` rounded-xl ${focused ? "bg-blue-500/10" : ""}`}>
+            <View
+              className={` rounded-xl ${focused ? "bg-blue-500/10 p-0.5" : ""}`}
+            >
               <Ionicons
                 name={focused ? "settings" : "settings-outline"}
                 size={24}

@@ -29,7 +29,7 @@ export default function HistoryScreen() {
   const { refetch: refetchUser } = useMe();
 
   const {
-    data: jobsRaw,
+    data: jobs,
     isLoading,
     refetch: refetchJobs,
     isRefetching,
@@ -37,7 +37,11 @@ export default function HistoryScreen() {
     queryKey: ["my-jobs"],
     queryFn: async () => {
       const res = await api.get("/jobs/");
-      return res.data;
+      // Trier côté client pour avoir un ordre stable
+      return res.data.sort(
+        (a: Job, b: Job) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
     },
     refetchInterval: (query) => {
       const data = query.state.data;
@@ -51,21 +55,12 @@ export default function HistoryScreen() {
     },
   });
 
-  // Trier les jobs de manière stable pour éviter les sauts visuels lors du polling
-  // Ordre : date décroissante (plus récent en premier)
-  const jobs = jobsRaw
-    ? [...jobsRaw].sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      )
-    : [];
-
   // --- REMPLACEMENT : Gestion des effets de bord ---
   useEffect(() => {
-    if (!jobsRaw) return;
+    if (!jobs) return;
 
     // 1. On regarde s'il y a des jobs en cours MAINTENANT
-    const hasPending = jobsRaw.some(
+    const hasPending = jobs.some(
       (j) => j.status === "PENDING" || j.status === "PROCESSING",
     );
 
@@ -79,7 +74,7 @@ export default function HistoryScreen() {
 
     // 3. On met à jour la référence pour le prochain rendu
     wasPendingRef.current = hasPending;
-  }, [jobsRaw, refetchUser]);
+  }, [jobs, refetchUser]);
 
   const handleRefresh = async () => {
     await Promise.all([refetchJobs(), refetchUser()]);

@@ -66,6 +66,16 @@ export default function JobDetailScreen() {
       return res.data;
     },
     enabled: !!id,
+    // Polling si le job est en cours de traitement
+    refetchInterval: (query) => {
+      const jobData = query.state.data;
+      if (!jobData) return false;
+
+      const isPending =
+        jobData.status === "PENDING" || jobData.status === "PROCESSING";
+
+      return isPending ? 3000 : false;
+    },
   });
 
   useEffect(() => {
@@ -219,7 +229,23 @@ export default function JobDetailScreen() {
 
   const isCompleted = job.status === "COMPLETED";
   const isFailed = job.status === "FAILED";
+  const isPending = job.status === "PENDING" || job.status === "PROCESSING";
   const report = job.result || {};
+
+  // Traduction des statuts en français
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "COMPLETED":
+        return "Terminé";
+      case "PENDING":
+      case "PROCESSING":
+        return "En cours";
+      case "FAILED":
+        return "Remboursé";
+      default:
+        return status;
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -312,15 +338,53 @@ export default function JobDetailScreen() {
                 </Text>
               </View>
               <View
-                className={`px-3 py-1.5 rounded-full ${isCompleted ? "bg-green-500/10" : "bg-yellow-500/10"}`}
+                className={`px-3 py-1.5 rounded-full ${
+                  isCompleted
+                    ? "bg-green-500/10"
+                    : isFailed
+                      ? "bg-red-500/10"
+                      : "bg-yellow-500/10"
+                }`}
               >
                 <Text
-                  className={`text-xs font-bold ${isCompleted ? "text-green-500" : "text-yellow-500"}`}
+                  className={`text-xs font-bold uppercase ${
+                    isCompleted
+                      ? "text-green-500"
+                      : isFailed
+                        ? "text-red-500"
+                        : "text-yellow-500"
+                  }`}
                 >
-                  {job.status}
+                  {getStatusLabel(job.status)}
                 </Text>
               </View>
             </View>
+
+            {/* Placeholder pour les rapports en cours de génération */}
+            {isPending && (
+              <View className="bg-surface p-8 rounded-xl border border-zinc-800 items-center justify-center">
+                <ActivityIndicator size="large" color="#fbbf24" />
+                <Text className="text-zinc-300 text-lg font-medium mt-4">
+                  IA en cours de réflexion...
+                </Text>
+                <Text className="text-zinc-500 text-sm text-center mt-2">
+                  L'analyse de votre enregistrement est en cours. Cela peut
+                  prendre quelques instants.
+                </Text>
+              </View>
+            )}
+
+            {/* Message d'erreur si échec */}
+            {isFailed && (
+              <View className="bg-red-500/5 p-6 rounded-xl border border-red-500/20">
+                <Text className="text-red-400 font-bold text-lg mb-2">
+                  Échec de l'analyse
+                </Text>
+                <Text className="text-red-400/70 text-sm">
+                  {job.error || "Une erreur technique est survenue."}
+                </Text>
+              </View>
+            )}
 
             {isCompleted && (
               <View className="flex-row bg-zinc-900 p-1 rounded-xl mb-6">
@@ -344,7 +408,7 @@ export default function JobDetailScreen() {
               </View>
             )}
 
-            {activeTab === "report" && (
+            {isCompleted && activeTab === "report" && (
               <View className="gap-4">
                 <View className="bg-surface p-4 rounded-xl border border-zinc-800">
                   <Markdown style={markdownStyles}>
@@ -355,7 +419,7 @@ export default function JobDetailScreen() {
               </View>
             )}
 
-            {activeTab === "transcript" && (
+            {isCompleted && activeTab === "transcript" && (
               <View className="bg-surface p-4 rounded-xl border border-zinc-800">
                 <Text className="text-zinc-300 leading-7 font-mono text-sm">
                   {job.result.raw_transcription}
