@@ -96,11 +96,11 @@ export default function LoginScreen() {
           />
         </View>
 
-        <TouchableOpacity className="items-end py-2">
+        {/*<TouchableOpacity className="items-end py-2">
           <Text className="text-primary text-sm font-medium">
             Mot de passe oublié ?
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity>*/}
 
         {/* Action Button */}
         <TouchableOpacity

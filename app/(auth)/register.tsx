@@ -137,7 +137,7 @@ export default function RegisterScreen() {
           </TouchableOpacity>
 
           <Text className="text-zinc-500 text-xs text-center mt-4">
-            En vous inscrivant, vous obtenez 5 crédits offerts pour tester
+            En vous inscrivant, vous obtenez 3 crédits offerts pour tester
             l'application.
           </Text>
         </View>
