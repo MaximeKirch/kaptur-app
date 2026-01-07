@@ -9,6 +9,8 @@ interface Props {
   cost: number;
   hasCredits: boolean;
   isSending: boolean;
+  isShortDuration?: boolean;
+  isAudioEmpty?: boolean;
   onReset: () => void;
   onAnalyze: () => void;
   onPaywall: () => void;
@@ -20,11 +22,22 @@ export const ReviewView = ({
   cost,
   hasCredits,
   isSending,
+  isShortDuration = false,
+  isAudioEmpty = false,
   onReset,
   onAnalyze,
   onPaywall,
 }: Props) => {
   const { isPlaying, togglePlay } = useAudioPlayer(uri);
+
+  // Déterminer quel warning afficher (priorité à l'audio vide si les deux sont vrais)
+  const showWarning = isAudioEmpty || isShortDuration;
+  const warningTitle = isAudioEmpty
+    ? "Audio vide ou silencieux"
+    : "Enregistrement très court";
+  const warningMessage = isAudioEmpty
+    ? "L'enregistrement ne semble contenir aucun son. Vérifiez que le microphone fonctionnait correctement."
+    : "L'enregistrement semble trop court. Vérifiez qu'il contient bien votre compte rendu.";
 
   return (
     <View className="w-full bg-surface p-6 rounded-3xl border border-zinc-800">
@@ -35,6 +48,26 @@ export const ReviewView = ({
           <Ionicons name="trash-outline" size={24} color="#ef4444" />
         </TouchableOpacity>
       </View>
+
+      {/* Warning si problème détecté */}
+      {showWarning && (
+        <View className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-4 flex-row items-start">
+          <Ionicons
+            name="warning-outline"
+            size={20}
+            color="#fbbf24"
+            style={{ marginRight: 8, marginTop: 2 }}
+          />
+          <View className="flex-1">
+            <Text className="text-yellow-500 font-medium text-sm">
+              {warningTitle}
+            </Text>
+            <Text className="text-yellow-500/80 text-xs mt-1">
+              {warningMessage}
+            </Text>
+          </View>
+        </View>
+      )}
 
       {/* Lecteur Audio */}
       <View className="flex-row items-center justify-between mb-8">

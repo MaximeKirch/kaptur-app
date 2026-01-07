@@ -40,8 +40,8 @@ export default function RegisterScreen() {
 
       const { auth, user } = response.data;
 
-      if (auth.accessToken) {
-        await loginAction(auth.accessToken, user);
+      if (auth.accessToken && auth.refreshToken) {
+        await loginAction(auth.accessToken, auth.refreshToken, user);
         setCredits(user.credits ?? 5);
         router.replace("/(tabs)");
       } else {
@@ -137,7 +137,7 @@ export default function RegisterScreen() {
           </TouchableOpacity>
 
           <Text className="text-zinc-500 text-xs text-center mt-4">
-            En vous inscrivant, vous obtenez 5 crédits offerts pour tester
+            En vous inscrivant, vous obtenez 3 crédits offerts pour tester
             l'application.
           </Text>
         </View>

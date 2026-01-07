@@ -2,27 +2,31 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useAuthStore } from "../src/store/authStore";
+import { useUserStore } from "../src/store/userStore";
 import "../global.css";
 import { usePushNotifications } from "../src/hooks/usePushNotifications";
 import * as Notifications from "expo-notifications";
+import Purchases, { LOG_LEVEL } from "react-native-purchases";
 
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
   const { isAuthenticated, checkAuth } = useAuthStore();
+  const { hasCompletedOnboarding, checkOnboardingStatus } = useUserStore();
   const segments = useSegments();
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
 
   usePushNotifications();
 
-  // 1. Phase d'initialisation : On vérifie le token au lancement
+  // 1. Phase d'initialisation : On vérifie le token et l'onboarding au lancement
   useEffect(() => {
     const init = async () => {
       await checkAuth();
+      await checkOnboardingStatus();
       setIsReady(true);
     };
     init();
@@ -53,19 +57,39 @@ function RootLayoutNav() {
     if (!isReady) return;
 
     const inAuthGroup = segments[0] === "(auth)";
+    const inOnboarding = segments[0] === "onboarding";
 
     if (!isAuthenticated && !inAuthGroup) {
       // Cas A : Pas connecté -> On l'envoie se logger
-      // Note : replace() évite qu'il puisse faire "retour" vers une page protégée
       router.replace("/(auth)/login");
-    } else if (isAuthenticated && inAuthGroup) {
-      // Cas B : Connecté mais traîne sur Login/Register -> On l'envoie à l'accueil
+    } else if (isAuthenticated && !hasCompletedOnboarding && !inOnboarding) {
+      // Cas B : Connecté mais onboarding pas complété -> On l'envoie à l'onboarding
+      router.replace("/onboarding");
+    } else if (isAuthenticated && hasCompletedOnboarding && inAuthGroup) {
+      // Cas C : Connecté, onboarding complété mais sur Login/Register -> On l'envoie à l'accueil
+      router.replace("/(tabs)");
+    } else if (isAuthenticated && hasCompletedOnboarding && inOnboarding) {
+      // Cas D : Connecté, onboarding complété mais sur onboarding -> On l'envoie à l'accueil
       router.replace("/(tabs)");
     }
 
     // NOTE : On a supprimé la redirection automatique vers /paywall.
     // L'utilisateur est libre de naviguer tant qu'il a des crédits.
-  }, [isAuthenticated, segments, isReady]);
+  }, [isAuthenticated, hasCompletedOnboarding, segments, isReady]);
+
+  useEffect(() => {
+    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+
+    if (Platform.OS === "ios") {
+      Purchases.configure({
+        apiKey: "test_uVWXbnqwCNxjBwHIaaBwdIBWPCg",
+      });
+    } else if (Platform.OS === "android") {
+      Purchases.configure({
+        apiKey: "test_uVWXbnqwCNxjBwHIaaBwdIBWPCg",
+      });
+    }
+  }, []);
 
   // Loader pendant l'initialisation (très court)
   if (!isReady) {
@@ -97,6 +121,7 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen name="(auth)" />
+        <Stack.Screen name="onboarding" />
       </Stack>
     </View>
   );
