@@ -6,15 +6,6 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { api } from "../services/api";
 
-// Configuration du comportement (alerte même si l'app est ouverte)
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
-
 interface UsePushNotificationsOptions {
   enabled?: boolean;
 }
@@ -22,6 +13,19 @@ interface UsePushNotificationsOptions {
 export const usePushNotifications = (options: UsePushNotificationsOptions = {}) => {
   const { enabled = true } = options;
   const [expoPushToken, setExpoPushToken] = useState<string | undefined>();
+
+  // Configuration du handler de notifications (seulement quand le hook est utilisé)
+  useEffect(() => {
+    if (!enabled) return;
+
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+  }, [enabled]);
 
   async function registerForPushNotificationsAsync() {
     let token;

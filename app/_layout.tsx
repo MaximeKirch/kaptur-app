@@ -7,9 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { useAuthStore } from "../src/store/authStore";
 import { useUserStore } from "../src/store/userStore";
 import "../global.css";
-import { usePushNotifications } from "../src/hooks/usePushNotifications";
 import * as Notifications from "expo-notifications";
-import Purchases, { LOG_LEVEL } from "react-native-purchases";
 
 const queryClient = new QueryClient();
 
@@ -20,9 +18,6 @@ function RootLayoutNav() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
   const [modulesInitialized, setModulesInitialized] = useState(false);
-
-  // On retarde l'initialisation des notifications
-  usePushNotifications({ enabled: modulesInitialized });
 
   // 1. Phase d'initialisation : On vérifie le token et l'onboarding au lancement
   // useEffect(() => {
@@ -55,7 +50,9 @@ function RootLayoutNav() {
 
         // 4. Maintenant on peut initialiser les modules natifs de manière séquentielle
         checkAuth().catch((e) => console.log("Auth check failed:", e));
-        checkOnboardingStatus().catch((e) => console.log("Onboarding check failed:", e));
+        checkOnboardingStatus().catch((e) =>
+          console.log("Onboarding check failed:", e),
+        );
 
         // 5. Marquer les modules comme initialisés (pour activer les notifications, etc.)
         setModulesInitialized(true);
@@ -127,35 +124,6 @@ function RootLayoutNav() {
     // L'utilisateur est libre de naviguer tant qu'il a des crédits.
   }, [isAuthenticated, hasCompletedOnboarding, segments, isReady]);
 
-  // Configuration RevenueCat retardée après l'initialisation
-  useEffect(() => {
-    if (!modulesInitialized) return;
-
-    const setupPurchases = async () => {
-      try {
-        // Délai supplémentaire pour RevenueCat
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-        // On vérifie si déjà configuré pour éviter de crash au re-render
-        const isConfigured = await Purchases.isConfigured();
-        if (!isConfigured) {
-          const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY;
-          if (!apiKey) {
-            console.error("RevenueCat API key is missing");
-            return;
-          }
-          Purchases.configure({
-            apiKey,
-          });
-          console.log("RevenueCat configured successfully");
-        }
-      } catch (error) {
-        console.error("Error configuring RevenueCat:", error);
-      }
-    };
-    setupPurchases();
-  }, [modulesInitialized]);
 
   // Loader pendant l'initialisation (très court)
   if (!isReady) {

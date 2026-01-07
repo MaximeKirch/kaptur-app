@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import { useUserStore } from "./userStore";
 import { api } from "../services/api";
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Purchases from "react-native-purchases";
 
 interface AuthState {
@@ -27,8 +27,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
 
   login: async (token, refreshToken, user) => {
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
-    await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
+    await AsyncStorage.setItem(TOKEN_KEY, token);
+    await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
     set({ token, refreshToken, user, isAuthenticated: true });
     if (user?.id) {
       try {
@@ -44,8 +44,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
-    await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+    await AsyncStorage.removeItem(TOKEN_KEY);
+    await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
     set({
       token: null,
       refreshToken: null,
@@ -63,13 +63,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setToken: async (token: string) => {
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
+    await AsyncStorage.setItem(TOKEN_KEY, token);
     set({ token });
   },
 
   refreshAccessToken: async () => {
     try {
-      const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+      const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
 
       if (!refreshToken) {
         console.log("[Refresh] Pas de refresh token -> Logout");
@@ -85,8 +85,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { access_token, refresh_token } = response.data;
 
       // Sauvegarder les nouveaux tokens
-      await SecureStore.setItemAsync(TOKEN_KEY, access_token);
-      await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refresh_token);
+      await AsyncStorage.setItem(TOKEN_KEY, access_token);
+      await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
       set({ token: access_token, refreshToken: refresh_token });
 
       console.log("[Refresh] Token rafraîchi avec succès");
@@ -145,11 +145,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // src/store/authStore.ts
   checkAuth: async () => {
     try {
-      // On ajoute un .catch() direct sur chaque appel SecureStore
-      const token = await SecureStore.getItemAsync(TOKEN_KEY).catch(() => null);
-      const refreshToken = await SecureStore.getItemAsync(
-        REFRESH_TOKEN_KEY,
-      ).catch(() => null);
+      const token = await AsyncStorage.getItem(TOKEN_KEY).catch(() => null);
+      const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY).catch(() => null);
 
       if (token && refreshToken) {
         set({ token, refreshToken, isAuthenticated: true });

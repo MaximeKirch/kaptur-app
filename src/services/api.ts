@@ -1,5 +1,5 @@
 import axios from "axios";
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.13:3000/";
 
@@ -11,18 +11,24 @@ export const api = axios.create({
   timeout: 10000,
 });
 
-api.interceptors.request.use(async (config) => {
-  try {
-    const token = await SecureStore.getItemAsync("relevo_auth_token");
+api.interceptors.request.use(
+  async (config) => {
+    try {
+      const token = await AsyncStorage.getItem("relevo_auth_token");
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      // On ne bloque pas la requête si on ne peut pas lire le token
+      console.error("Erreur lecture token:", error);
     }
-  } catch (error) {
-    console.error("Erreur lecture token", error);
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 // Variable pour éviter les boucles infinies de refresh
 let isRefreshing = false;

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface UserState {
   credits: number;
@@ -22,12 +22,12 @@ export const useUserStore = create<UserState>((set) => ({
     set((state) => ({ credits: Math.max(0, state.credits - 1) })),
 
   markOnboardingComplete: async () => {
-    await SecureStore.setItemAsync(ONBOARDING_KEY, "true");
+    await AsyncStorage.setItem(ONBOARDING_KEY, "true");
     set({ hasCompletedOnboarding: true });
   },
 
   checkOnboardingStatus: async () => {
-    const completed = await SecureStore.getItemAsync(ONBOARDING_KEY);
+    const completed = await AsyncStorage.getItem(ONBOARDING_KEY);
     set({ hasCompletedOnboarding: completed === "true" });
   },
 }));
