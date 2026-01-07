@@ -23,10 +23,26 @@ function RootLayoutNav() {
   usePushNotifications();
 
   // 1. Phase d'initialisation : On vérifie le token et l'onboarding au lancement
+  // useEffect(() => {
+  //   const init = async () => {
+  //     await checkAuth();
+  //     await checkOnboardingStatus();
+  //     setIsReady(true);
+  //   };
+  //   init();
+  // }, []);
+  //
+  // app/_layout.tsx
   useEffect(() => {
     const init = async () => {
-      await checkAuth();
-      await checkOnboardingStatus();
+      // ON LAISSE RESPIRER LE SYSTÈME
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      // ON TENTE L'AUTH MAIS ON NE BLOQUE PAS LE READY
+      checkAuth().catch(() => console.log("Auth failed but moving on"));
+      checkOnboardingStatus().catch(() => null);
+
+      // ON LIBÈRE L'UI IMMÉDIATEMENT
       setIsReady(true);
     };
     init();
@@ -78,17 +94,17 @@ function RootLayoutNav() {
   }, [isAuthenticated, hasCompletedOnboarding, segments, isReady]);
 
   useEffect(() => {
-    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-
-    if (Platform.OS === "ios") {
-      Purchases.configure({
-        apiKey: "test_uVWXbnqwCNxjBwHIaaBwdIBWPCg",
-      });
-    } else if (Platform.OS === "android") {
-      Purchases.configure({
-        apiKey: "test_uVWXbnqwCNxjBwHIaaBwdIBWPCg",
-      });
-    }
+    const setupPurchases = async () => {
+      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+      // On vérifie si déjà configuré pour éviter de crash au re-render
+      const isConfigured = await Purchases.isConfigured();
+      if (!isConfigured) {
+        Purchases.configure({
+          apiKey: "test_uVWXbnqwCNxjBwHIaaBwdIBWPCg",
+        });
+      }
+    };
+    setupPurchases();
   }, []);
 
   // Loader pendant l'initialisation (très court)
