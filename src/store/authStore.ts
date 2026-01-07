@@ -132,20 +132,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // },
   //
   // src/store/authStore.ts
+  // src/store/authStore.ts
   checkAuth: async () => {
     try {
-      // catch(() => null) est vital ici pour ne pas propager l'erreur de Keychain
+      // On ajoute un .catch() direct sur chaque appel SecureStore
       const token = await SecureStore.getItemAsync(TOKEN_KEY).catch(() => null);
+      const refreshToken = await SecureStore.getItemAsync(
+        REFRESH_TOKEN_KEY,
+      ).catch(() => null);
 
-      if (token) {
-        set({ token, isAuthenticated: true });
-        // On lance le reste en différé sans 'await' pour ne pas bloquer le thread principal
+      if (token && refreshToken) {
+        set({ token, refreshToken, isAuthenticated: true });
+        // On fetch le user plus tard, tranquillement
         api
           .get("/auth/me")
           .then((res) => set({ user: res.data }))
           .catch(() => null);
+      } else {
+        set({ isAuthenticated: false });
       }
     } catch (e) {
+      // Si ça crash ici, on neutralise
       set({ isAuthenticated: false });
     }
   },

@@ -34,18 +34,24 @@ function RootLayoutNav() {
   //
   // app/_layout.tsx
   useEffect(() => {
+    let isMounted = true;
+
     const init = async () => {
-      // ON LAISSE RESPIRER LE SYSTÈME
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // 1. Délai de courtoisie pour laisser iOS respirer
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // ON TENTE L'AUTH MAIS ON NE BLOQUE PAS LE READY
-      checkAuth().catch(() => console.log("Auth failed but moving on"));
-      checkOnboardingStatus().catch(() => null);
+      // 2. On lance l'auth SANS 'await' pour ne pas bloquer le thread principal
+      checkAuth().catch((e) => console.log("Auth silent fail"));
+      checkOnboardingStatus().catch((e) => null);
 
-      // ON LIBÈRE L'UI IMMÉDIATEMENT
-      setIsReady(true);
+      // 3. On libère l'UI quoi qu'il arrive
+      if (isMounted) setIsReady(true);
     };
+
     init();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
