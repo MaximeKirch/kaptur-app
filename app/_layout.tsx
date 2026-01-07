@@ -19,8 +19,10 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
+  const [modulesInitialized, setModulesInitialized] = useState(false);
 
-  usePushNotifications();
+  // On retarde l'initialisation des notifications
+  usePushNotifications({ enabled: modulesInitialized });
 
   // 1. Phase d'initialisation : On vérifie le token et l'onboarding au lancement
   // useEffect(() => {
@@ -32,20 +34,39 @@ function RootLayoutNav() {
   //   init();
   // }, []);
   //
-  // app/_layout.tsx
+  // Phase d'initialisation séquentielle pour éviter les crashs natifs
   useEffect(() => {
     let isMounted = true;
 
     const init = async () => {
-      // 1. Délai de courtoisie pour laisser iOS respirer
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      try {
+        // 1. Délai initial pour laisser iOS et React Native s'initialiser complètement
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // 2. On lance l'auth SANS 'await' pour ne pas bloquer le thread principal
-      checkAuth().catch((e) => console.log("Auth silent fail"));
-      checkOnboardingStatus().catch((e) => null);
+        if (!isMounted) return;
 
-      // 3. On libère l'UI quoi qu'il arrive
-      if (isMounted) setIsReady(true);
+        // 2. On libère l'UI d'abord (sans modules natifs)
+        setIsReady(true);
+
+        // 3. Délai supplémentaire pour que l'UI soit montée
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        if (!isMounted) return;
+
+        // 4. Maintenant on peut initialiser les modules natifs de manière séquentielle
+        checkAuth().catch((e) => console.log("Auth check failed:", e));
+        checkOnboardingStatus().catch((e) => console.log("Onboarding check failed:", e));
+
+        // 5. Marquer les modules comme initialisés (pour activer les notifications, etc.)
+        setModulesInitialized(true);
+      } catch (error) {
+        console.error("Critical init error:", error);
+        // On libère quand même l'UI pour éviter un écran blanc infini
+        if (isMounted) {
+          setIsReady(true);
+          setModulesInitialized(true);
+        }
+      }
     };
 
     init();
@@ -55,24 +76,31 @@ function RootLayoutNav() {
   }, []);
 
   useEffect(() => {
-    // Écouteur de clic sur notification
+    if (!modulesInitialized) return;
+
+    // Écouteur de clic sur notification (seulement après l'initialisation des modules)
     const subscription = Notifications.addNotificationResponseReceivedListener(
       (response) => {
-        const jobId = response.notification.request.content.data.jobId;
+        try {
+          const data = response?.notification?.request?.content?.data;
+          const jobId = data?.jobId;
 
-        if (jobId) {
-          // On navigue vers la page de détail
-          // Note: router.push peut nécessiter d'être dans un setTimeout ou d'attendre que l'app soit prête
-          router.push({
-            pathname: "/job/[id]",
-            params: { id: jobId },
-          } as any);
+          if (jobId) {
+            // On navigue vers la page de détail
+            // Note: router.push peut nécessiter d'être dans un setTimeout ou d'attendre que l'app soit prête
+            router.push({
+              pathname: "/job/[id]",
+              params: { id: jobId },
+            } as any);
+          }
+        } catch (error) {
+          console.error("Error handling notification response:", error);
         }
       },
     );
 
     return () => subscription.remove();
-  }, []);
+  }, [modulesInitialized]);
 
   // 2. Phase de Protection des routes
   useEffect(() => {
@@ -99,19 +127,35 @@ function RootLayoutNav() {
     // L'utilisateur est libre de naviguer tant qu'il a des crédits.
   }, [isAuthenticated, hasCompletedOnboarding, segments, isReady]);
 
+  // Configuration RevenueCat retardée après l'initialisation
   useEffect(() => {
+    if (!modulesInitialized) return;
+
     const setupPurchases = async () => {
-      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-      // On vérifie si déjà configuré pour éviter de crash au re-render
-      const isConfigured = await Purchases.isConfigured();
-      if (!isConfigured) {
-        Purchases.configure({
-          apiKey: "test_uVWXbnqwCNxjBwHIaaBwdIBWPCg",
-        });
+      try {
+        // Délai supplémentaire pour RevenueCat
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+        // On vérifie si déjà configuré pour éviter de crash au re-render
+        const isConfigured = await Purchases.isConfigured();
+        if (!isConfigured) {
+          const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY;
+          if (!apiKey) {
+            console.error("RevenueCat API key is missing");
+            return;
+          }
+          Purchases.configure({
+            apiKey,
+          });
+          console.log("RevenueCat configured successfully");
+        }
+      } catch (error) {
+        console.error("Error configuring RevenueCat:", error);
       }
     };
     setupPurchases();
-  }, []);
+  }, [modulesInitialized]);
 
   // Loader pendant l'initialisation (très court)
   if (!isReady) {

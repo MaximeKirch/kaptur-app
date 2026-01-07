@@ -15,7 +15,12 @@ Notifications.setNotificationHandler({
   }),
 });
 
-export const usePushNotifications = () => {
+interface UsePushNotificationsOptions {
+  enabled?: boolean;
+}
+
+export const usePushNotifications = (options: UsePushNotificationsOptions = {}) => {
+  const { enabled = true } = options;
   const [expoPushToken, setExpoPushToken] = useState<string | undefined>();
 
   async function registerForPushNotificationsAsync() {
@@ -61,6 +66,8 @@ export const usePushNotifications = () => {
   }
 
   useEffect(() => {
+    if (!enabled) return;
+
     registerForPushNotificationsAsync().then((token) => {
       setExpoPushToken(token);
       if (token) {
@@ -69,8 +76,10 @@ export const usePushNotifications = () => {
           .post("/users/push-token", { token })
           .catch((err) => console.error("Failed to sync token", err));
       }
+    }).catch((err) => {
+      console.error("Failed to register for push notifications", err);
     });
-  }, []);
+  }, [enabled]);
 
   return { expoPushToken };
 };

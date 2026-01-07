@@ -32,8 +32,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ token, refreshToken, user, isAuthenticated: true });
     if (user?.id) {
       try {
-        await Purchases.logIn(user.id);
-        console.log("🔗 RevenueCat lié à l'utilisateur :", user.id);
+        const isConfigured = await Purchases.isConfigured();
+        if (isConfigured) {
+          await Purchases.logIn(user.id.toString());
+          console.log("🔗 RevenueCat lié à l'utilisateur :", user.id);
+        }
       } catch (e) {
         console.error("Erreur liaison RevenueCat", e);
       }
@@ -49,7 +52,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user: null,
       isAuthenticated: false,
     });
-    await Purchases.logOut();
+    try {
+      const isConfigured = await Purchases.isConfigured();
+      if (isConfigured) {
+        await Purchases.logOut();
+      }
+    } catch (e) {
+      console.error("Erreur déconnexion RevenueCat", e);
+    }
   },
 
   setToken: async (token: string) => {
