@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Relevo",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "slug": "kaptur-app",
     "version": "1.0.0",
     "orientation": "portrait",

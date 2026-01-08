@@ -6,26 +6,17 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "env": {
-        "SENTRY_DIST": "dev"
-      }
+      "distribution": "internal"
     },
     "preview": {
       "distribution": "internal",
       "developmentClient": false,
       "ios": {
         "simulator": false
-      },
-      "env": {
-        "SENTRY_DIST": "preview"
       }
     },
     "production": {
-      "autoIncrement": true,
-      "env": {
-        "SENTRY_DIST": "production"
-      }
+      "autoIncrement": true
     }
   },
   "submit": {
