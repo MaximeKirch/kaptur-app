@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { useUserStore } from "./userStore";
 import { api } from "../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Purchases from "react-native-purchases";
+// import Purchases from "react-native-purchases";
 
 interface AuthState {
   token: string | null;
@@ -30,17 +30,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await AsyncStorage.setItem(TOKEN_KEY, token);
     await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
     set({ token, refreshToken, user, isAuthenticated: true });
-    if (user?.id) {
-      try {
-        const isConfigured = await Purchases.isConfigured();
-        if (isConfigured) {
-          await Purchases.logIn(user.id.toString());
-          console.log("🔗 RevenueCat lié à l'utilisateur :", user.id);
-        }
-      } catch (e) {
-        console.error("Erreur liaison RevenueCat", e);
-      }
-    }
+    // COMMENTED OUT FOR DEBUGGING
+    // if (user?.id) {
+    //   try {
+    //     const isConfigured = await Purchases.isConfigured();
+    //     if (isConfigured) {
+    //       await Purchases.logIn(user.id.toString());
+    //       console.log("🔗 RevenueCat lié à l'utilisateur :", user.id);
+    //     }
+    //   } catch (e) {
+    //     console.error("Erreur liaison RevenueCat", e);
+    //   }
+    // }
   },
 
   logout: async () => {
@@ -52,14 +53,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user: null,
       isAuthenticated: false,
     });
-    try {
-      const isConfigured = await Purchases.isConfigured();
-      if (isConfigured) {
-        await Purchases.logOut();
-      }
-    } catch (e) {
-      console.error("Erreur déconnexion RevenueCat", e);
-    }
+    // COMMENTED OUT FOR DEBUGGING
+    // try {
+    //   const isConfigured = await Purchases.isConfigured();
+    //   if (isConfigured) {
+    //     await Purchases.logOut();
+    //   }
+    // } catch (e) {
+    //   console.error("Erreur déconnexion RevenueCat", e);
+    // }
   },
 
   setToken: async (token: string) => {

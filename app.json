@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "Relevo",
+    "newArchEnabled": true,
     "slug": "kaptur-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -35,13 +36,13 @@
     },
 
     "plugins": [
-      "expo-router",
-      [
-        "expo-av",
-        {
-          "microphonePermission": "Relevo a besoin de votre micro pour enregistrer vos notes vocales à analyser."
-        }
-      ]
+      "expo-router"
+      // [
+      //   "expo-av",
+      //   {
+      //     "microphonePermission": "Relevo a besoin de votre micro pour enregistrer vos notes vocales à analyser."
+      //   }
+      // ]
     ],
     "experiments": {
       "typedRoutes": true

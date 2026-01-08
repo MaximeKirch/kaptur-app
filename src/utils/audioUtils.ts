@@ -1,5 +1,5 @@
 // src/utils/audioUtils.ts
-import { Audio } from "expo-av";
+// import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system/legacy";
 
 /**
@@ -9,27 +9,30 @@ import * as FileSystem from "expo-file-system/legacy";
 export const getAudioDurationInSeconds = async (
   uri: string,
 ): Promise<number> => {
-  try {
-    const { sound, status } = await Audio.Sound.createAsync(
-      { uri },
-      { shouldPlay: false }, // On ne veut pas jouer, juste lire les infos
-    );
+  // COMMENTED OUT FOR DEBUGGING
+  // try {
+  //   const { sound, status } = await Audio.Sound.createAsync(
+  //     { uri },
+  //     { shouldPlay: false }, // On ne veut pas jouer, juste lire les infos
+  //   );
 
-    let duration = 0;
+  //   let duration = 0;
 
-    if (status.isLoaded && status.durationMillis) {
-      duration = status.durationMillis / 1000;
-    }
+  //   if (status.isLoaded && status.durationMillis) {
+  //     duration = status.durationMillis / 1000;
+  //   }
 
-    // CRUCIAL : On libère la mémoire immédiatement
-    await sound.unloadAsync();
+  //   // CRUCIAL : On libère la mémoire immédiatement
+  //   await sound.unloadAsync();
 
-    return duration;
-  } catch (error) {
-    console.error("Erreur lors de l'analyse du fichier audio:", error);
-    // En cas d'erreur, on retourne 0 (le composant UI devra gérer ça)
-    return 0;
-  }
+  //   return duration;
+  // } catch (error) {
+  //   console.error("Erreur lors de l'analyse du fichier audio:", error);
+  //   // En cas d'erreur, on retourne 0 (le composant UI devra gérer ça)
+  //   return 0;
+  // }
+  console.log("Audio duration check disabled for debugging");
+  return 0;
 };
 
 /**

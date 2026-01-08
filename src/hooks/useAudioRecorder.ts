@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Audio } from "expo-av";
+// import { Audio } from "expo-av";
 import * as DocumentPicker from "expo-document-picker";
 import { Alert, Linking, Platform } from "react-native";
 import { getAudioDurationInSeconds } from "../utils/audioUtils";
@@ -9,16 +9,22 @@ export type AudioSource = "recorded" | "imported";
 
 const MAX_DURATION = 900; // 15 minutes en secondes
 
+// Type stub
+type Recording = any;
+type PermissionResponse = any;
+
 export const useAudioRecorder = () => {
-  const [permissionResponse, requestPermission] = Audio.usePermissions();
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  // COMMENTED OUT FOR DEBUGGING
+  // const [permissionResponse, requestPermission] = Audio.usePermissions();
+  const [permissionResponse, setPermissionResponse] = useState<PermissionResponse | null>(null);
+  const [recording, setRecording] = useState<Recording | null>(null);
   const [status, setStatus] = useState<RecordingStatus>("idle");
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [duration, setDuration] = useState(0);
   const [audioSource, setAudioSource] = useState<AudioSource | null>(null);
 
   // Ref pour accéder à l'instance recording dans le setInterval sans dépendance
-  const recordingRef = useRef<Audio.Recording | null>(null);
+  const recordingRef = useRef<Recording | null>(null);
 
   // Gestion du Timer et de la Limite 15 min
   useEffect(() => {
@@ -45,74 +51,79 @@ export const useAudioRecorder = () => {
   }, [status]);
 
   const startRecording = async () => {
-    try {
-      // Vérifier et demander la permission si nécessaire
-      if (permissionResponse?.status !== "granted") {
-        const { status } = await requestPermission();
+    // COMMENTED OUT FOR DEBUGGING
+    // try {
+    //   // Vérifier et demander la permission si nécessaire
+    //   if (permissionResponse?.status !== "granted") {
+    //     const { status } = await requestPermission();
 
-        // Si l'utilisateur refuse la permission
-        if (status !== "granted") {
-          Alert.alert(
-            "Permission microphone requise",
-            "Relevo a besoin d'accéder à votre microphone pour enregistrer vos comptes rendus. C'est le cœur de l'application.\n\nVeuillez autoriser l'accès dans les paramètres.",
-            [
-              { text: "Annuler", style: "cancel" },
-              {
-                text: "Ouvrir les paramètres",
-                onPress: () => {
-                  if (Platform.OS === "ios") {
-                    Linking.openURL("app-settings:");
-                  } else {
-                    Linking.openSettings();
-                  }
-                },
-              },
-            ]
-          );
-          return;
-        }
-      }
+    //     // Si l'utilisateur refuse la permission
+    //     if (status !== "granted") {
+    //       Alert.alert(
+    //         "Permission microphone requise",
+    //         "Relevo a besoin d'accéder à votre microphone pour enregistrer vos comptes rendus. C'est le cœur de l'application.\n\nVeuillez autoriser l'accès dans les paramètres.",
+    //         [
+    //           { text: "Annuler", style: "cancel" },
+    //           {
+    //             text: "Ouvrir les paramètres",
+    //             onPress: () => {
+    //               if (Platform.OS === "ios") {
+    //                 Linking.openURL("app-settings:");
+    //               } else {
+    //                 Linking.openSettings();
+    //               }
+    //             },
+    //           },
+    //         ]
+    //       );
+    //       return;
+    //     }
+    //   }
 
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-      const { recording: newRecording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY,
-      );
+    //   await Audio.setAudioModeAsync({
+    //     allowsRecordingIOS: true,
+    //     playsInSilentModeIOS: true,
+    //   });
+    //   const { recording: newRecording } = await Audio.Recording.createAsync(
+    //     Audio.RecordingOptionsPresets.HIGH_QUALITY,
+    //   );
 
-      setRecording(newRecording);
-      recordingRef.current = newRecording; // Mise à jour de la ref
+    //   setRecording(newRecording);
+    //   recordingRef.current = newRecording; // Mise à jour de la ref
 
-      setStatus("recording");
-      setDuration(0);
-    } catch (err) {
-      Alert.alert("Erreur", "Impossible de lancer l'enregistrement");
-    }
+    //   setStatus("recording");
+    //   setDuration(0);
+    // } catch (err) {
+    //   Alert.alert("Erreur", "Impossible de lancer l'enregistrement");
+    // }
+    console.log("Audio recording disabled for debugging");
+    Alert.alert("Fonctionnalité désactivée", "L'enregistrement audio est temporairement désactivé pour le debugging");
   };
 
   const stopRecording = async () => {
-    // On utilise la ref ou le state, selon ce qui est disponible
-    const recorder = recording || recordingRef.current;
-    if (!recorder) return;
+    // COMMENTED OUT FOR DEBUGGING
+    // // On utilise la ref ou le state, selon ce qui est disponible
+    // const recorder = recording || recordingRef.current;
+    // if (!recorder) return;
 
-    try {
-      await recorder.stopAndUnloadAsync();
-    } catch (error) {
-      console.log("Erreur lors de l'arrêt", error);
-    }
+    // try {
+    //   await recorder.stopAndUnloadAsync();
+    // } catch (error) {
+    //   console.log("Erreur lors de l'arrêt", error);
+    // }
 
-    const uri = recorder.getURI();
+    // const uri = recorder.getURI();
 
-    setRecording(null);
-    recordingRef.current = null;
-    await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+    // setRecording(null);
+    // recordingRef.current = null;
+    // await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
 
-    if (uri) {
-      setAudioUri(uri);
-      setAudioSource("recorded");
-      setStatus("review");
-    }
+    // if (uri) {
+    //   setAudioUri(uri);
+    //   setAudioSource("recorded");
+    //   setStatus("review");
+    // }
+    console.log("Stop recording disabled for debugging");
   };
 
   const importFile = async () => {

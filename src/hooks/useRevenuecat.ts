@@ -1,54 +1,58 @@
 import { useEffect, useState } from "react";
 import { Alert } from "react-native";
-import Purchases, { PurchasesPackage, LOG_LEVEL } from "react-native-purchases";
+// import Purchases, { PurchasesPackage, LOG_LEVEL } from "react-native-purchases";
 import { useUserStore } from "../store/userStore";
 import { api } from "../services/api";
+
+// Type stub pour remplacer PurchasesPackage
+type PurchasesPackage = any;
 
 export const useRevenueCat = () => {
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const setCredits = useUserStore((state) => state.setCredits);
 
+  // COMMENTED OUT FOR DEBUGGING
   // Initialiser RevenueCat puis charger les offres
-  useEffect(() => {
-    const initAndLoadOfferings = async () => {
-      try {
-        // 1. D'abord, configurer RevenueCat si ce n'est pas encore fait
-        Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-        const isConfigured = await Purchases.isConfigured();
+  // useEffect(() => {
+  //   const initAndLoadOfferings = async () => {
+  //     try {
+  //       // 1. D'abord, configurer RevenueCat si ce n'est pas encore fait
+  //       Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+  //       const isConfigured = await Purchases.isConfigured();
 
-        if (!isConfigured) {
-          const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY;
-          if (!apiKey) {
-            console.error("RevenueCat API key is missing");
-            return;
-          }
+  //       if (!isConfigured) {
+  //         const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY;
+  //         if (!apiKey) {
+  //           console.error("RevenueCat API key is missing");
+  //           return;
+  //         }
 
-          Purchases.configure({ apiKey });
-          console.log("✅ RevenueCat configured in paywall");
-        }
+  //         Purchases.configure({ apiKey });
+  //         console.log("✅ RevenueCat configured in paywall");
+  //       }
 
-        // 2. Ensuite, charger les offres
-        const offerings = await Purchases.getOfferings();
+  //       // 2. Ensuite, charger les offres
+  //       const offerings = await Purchases.getOfferings();
 
-        // On vérifie qu'on a bien une "current" offering et qu'elle n'est pas vide
-        if (
-          offerings.current !== null &&
-          offerings.current.availablePackages.length !== 0
-        ) {
-          setPackages(offerings.current.availablePackages);
-        } else {
-          console.log(
-            "⚠️ Aucune offre trouvée (Offering vide ou mal configurée)",
-          );
-        }
-      } catch (e) {
-        console.error("Erreur chargement offres RevenueCat", e);
-      }
-    };
+  //       // On vérifie qu'on a bien une "current" offering et qu'elle n'est pas vide
+  //       if (
+  //         offerings.current !== null &&
+  //         offerings.current.availablePackages.length !== 0
+  //       ) {
+  //         setPackages(offerings.current.availablePackages);
+  //       } else {
+  //         console.log(
+  //           "⚠️ Aucune offre trouvée (Offering vide ou mal configurée)",
+  //         );
+  //       }
+  //     } catch (e) {
+  //       console.error("Erreur chargement offres RevenueCat", e);
+  //     }
+  //   };
 
-    initAndLoadOfferings();
-  }, []);
+  //   initAndLoadOfferings();
+  // }, []);
   // ----------------------------------
 
   // Fonction utilitaire pour rafraîchir le profil utilisateur
@@ -66,38 +70,40 @@ export const useRevenueCat = () => {
   };
 
   const buyPackage = async (pack: PurchasesPackage) => {
-    setIsPurchasing(true);
-    try {
-      await Purchases.purchasePackage(pack);
+    // COMMENTED OUT FOR DEBUGGING
+    // setIsPurchasing(true);
+    // try {
+    //   await Purchases.purchasePackage(pack);
 
-      let attempts = 0;
-      const maxAttempts = 10;
+    //   let attempts = 0;
+    //   const maxAttempts = 10;
 
-      const interval = setInterval(async () => {
-        attempts++;
-        await refreshUserProfile();
-        if (attempts >= maxAttempts) {
-          clearInterval(interval);
-        }
-      }, 1000);
+    //   const interval = setInterval(async () => {
+    //     attempts++;
+    //     await refreshUserProfile();
+    //     if (attempts >= maxAttempts) {
+    //       clearInterval(interval);
+    //     }
+    //   }, 1000);
 
-      Alert.alert(
-        "Paiement validé",
-        "Merci ! Vos crédits sont en train d'être ajoutés à votre compte.",
-      );
+    //   Alert.alert(
+    //     "Paiement validé",
+    //     "Merci ! Vos crédits sont en train d'être ajoutés à votre compte.",
+    //   );
 
-      await refreshUserProfile();
-    } catch (e: any) {
-      if (!e.userCancelled) {
-        Alert.alert(
-          "Erreur",
-          "Le paiement n'a pas pu aboutir. Veuillez réessayer.",
-        );
-        console.error(e);
-      }
-    } finally {
-      setIsPurchasing(false);
-    }
+    //   await refreshUserProfile();
+    // } catch (e: any) {
+    //   if (!e.userCancelled) {
+    //     Alert.alert(
+    //       "Erreur",
+    //       "Le paiement n'a pas pu aboutir. Veuillez réessayer.",
+    //     );
+    //     console.error(e);
+    //   }
+    // } finally {
+    //   setIsPurchasing(false);
+    // }
+    console.log("RevenueCat buyPackage is disabled for debugging");
   };
 
   return { packages, isPurchasing, buyPackage };

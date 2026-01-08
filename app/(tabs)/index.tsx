@@ -2,7 +2,7 @@ import { View, Text, SafeAreaView, Alert, Linking, Platform } from "react-native
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
-import * as Notifications from "expo-notifications";
+// import * as Notifications from "expo-notifications";
 
 // Stores & Hooks
 import { useUserStore } from "../../src/store/userStore";
@@ -156,41 +156,49 @@ export default function HomeScreen() {
         // Invalider pour récupérer les vraies données du serveur
         queryClient.invalidateQueries({ queryKey: ["my-jobs"] });
 
+        // COMMENTED OUT FOR DEBUGGING
         // Vérifier les permissions de notification
-        const { status } = await Notifications.getPermissionsAsync();
+        // const { status } = await Notifications.getPermissionsAsync();
 
-        if (status === "granted") {
-          // L'utilisateur accepte les notifications
-          Alert.alert(
-            "Analyse en cours",
-            "Votre enregistrement est en cours d'analyse. Vous recevrez une notification dès que votre rapport sera prêt.",
-            [{ text: "OK", onPress: () => router.push("/(tabs)/history") }]
-          );
-        } else {
-          // L'utilisateur n'accepte pas les notifications
-          Alert.alert(
-            "Analyse en cours",
-            "Votre enregistrement est en cours d'analyse.\n\nActivez les notifications dans vos paramètres pour être averti lorsque le rapport sera prêt.",
-            [
-              {
-                text: "Plus tard",
-                style: "cancel",
-                onPress: () => router.push("/(tabs)/history"),
-              },
-              {
-                text: "Ouvrir les paramètres",
-                onPress: () => {
-                  if (Platform.OS === "ios") {
-                    Linking.openURL("app-settings:");
-                  } else {
-                    Linking.openSettings();
-                  }
-                  router.push("/(tabs)/history");
-                },
-              },
-            ]
-          );
-        }
+        // Simple alert sans vérifier les permissions
+        Alert.alert(
+          "Analyse en cours",
+          "Votre enregistrement est en cours d'analyse. Consultez l'onglet Historique pour suivre son statut.",
+          [{ text: "OK", onPress: () => router.push("/(tabs)/history") }]
+        );
+
+        // if (status === "granted") {
+        //   // L'utilisateur accepte les notifications
+        //   Alert.alert(
+        //     "Analyse en cours",
+        //     "Votre enregistrement est en cours d'analyse. Vous recevrez une notification dès que votre rapport sera prêt.",
+        //     [{ text: "OK", onPress: () => router.push("/(tabs)/history") }]
+        //   );
+        // } else {
+        //   // L'utilisateur n'accepte pas les notifications
+        //   Alert.alert(
+        //     "Analyse en cours",
+        //     "Votre enregistrement est en cours d'analyse.\n\nActivez les notifications dans vos paramètres pour être averti lorsque le rapport sera prêt.",
+        //     [
+        //       {
+        //         text: "Plus tard",
+        //         style: "cancel",
+        //         onPress: () => router.push("/(tabs)/history"),
+        //       },
+        //       {
+        //         text: "Ouvrir les paramètres",
+        //         onPress: () => {
+        //           if (Platform.OS === "ios") {
+        //             Linking.openURL("app-settings:");
+        //           } else {
+        //             Linking.openSettings();
+        //           }
+        //           router.push("/(tabs)/history");
+        //         },
+        //       },
+        //     ]
+        //   );
+        // }
       },
       // L'erreur est gérée dans le hook useCreateJob, mais on peut garder un fallback ici
     });
