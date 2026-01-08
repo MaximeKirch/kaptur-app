@@ -1,4 +1,11 @@
-import { View, Text, SafeAreaView, Alert, Linking, Platform } from "react-native";
+import {
+  View,
+  Text,
+  SafeAreaView,
+  Alert,
+  Linking,
+  Platform,
+} from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
@@ -90,7 +97,7 @@ export default function HomeScreen() {
               text: "Analyser quand même",
               onPress: () => proceedWithAnalysis(),
             },
-          ]
+          ],
         );
         return;
       }
@@ -110,7 +117,7 @@ export default function HomeScreen() {
               text: "Analyser quand même",
               onPress: () => proceedWithAnalysis(),
             },
-          ]
+          ],
         );
         return;
       }
@@ -164,7 +171,7 @@ export default function HomeScreen() {
         Alert.alert(
           "Analyse en cours",
           "Votre enregistrement est en cours d'analyse. Consultez l'onglet Historique pour suivre son statut.",
-          [{ text: "OK", onPress: () => router.push("/(tabs)/history") }]
+          [{ text: "OK", onPress: () => router.push("/(tabs)/history") }],
         );
 
         // if (status === "granted") {
