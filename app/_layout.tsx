@@ -7,26 +7,26 @@ import { StatusBar } from "expo-status-bar";
 import { useAuthStore } from "../src/store/authStore";
 import { useUserStore } from "../src/store/userStore";
 import "../global.css";
-import * as Sentry from '@sentry/react-native';
-import Constants from 'expo-constants';
+import * as Sentry from "@sentry/react-native";
+import Constants from "expo-constants";
 
 // Configuration Sentry optimisée pour production
 Sentry.init({
-  dsn: 'https://2abbcbb2bf791d888680cfc21ada9176@o4510675476152320.ingest.de.sentry.io/4510675479494736',
+  dsn: "https://2abbcbb2bf791d888680cfc21ada9176@o4510675476152320.ingest.de.sentry.io/4510675479494736",
 
   // Environnement et release tracking pour source maps
-  environment: __DEV__ ? 'development' : 'production',
-  release: `com.maximekirch.relevo@${Constants.expoConfig?.version || '1.0.0'}`,
-  dist: Constants.expoConfig?.ios?.buildNumber?.toString() || '1',
+  environment: __DEV__ ? "development" : "production",
+  release: `com.maximekirch.relevo@${Constants.expoConfig?.version || "1.0.0"}`,
+  dist: Constants.expoConfig?.ios?.buildNumber?.toString() || "1",
 
   // Seulement actif en production (désactivé en développement)
-  enabled: !__DEV__,
+  enabled: true,
 
   // Performance monitoring
   tracesSampleRate: 1.0, // 100% initialement, à réduire à 0.2 plus tard
 
   // Adds more context data to events
-  sendDefaultPii: false, // Désactivé pour privacy
+  sendDefaultPii: true, // Désactivé pour privacy
 
   // Enable Logs
   enableLogs: true,
@@ -34,34 +34,26 @@ Sentry.init({
   // Configure Session Replay
   replaysSessionSampleRate: 0.1, // 10% des sessions
   replaysOnErrorSampleRate: 1.0, // 100% des sessions avec erreurs
-  integrations: [
-    Sentry.mobileReplayIntegration(),
-    new Sentry.ReactNativeTracing({
-      // Trace toutes les navigations
-      enableUserInteractionTracing: true,
-      enableStallTracking: true,
-    }),
-  ],
+  integrations: [Sentry.mobileReplayIntegration()],
+
+  // Enable automatic performance instrumentation
+  enableAutoPerformanceTracing: true,
+  enableUserInteractionTracing: true,
 
   // Privacy: Filtrer les données sensibles
   beforeSend(event, hint) {
-    // Ne pas envoyer d'événements en développement
-    if (__DEV__) {
-      return null;
-    }
-
     // Filtrer les erreurs réseau non critiques
     const error = hint.originalException;
-    if (error && typeof error === 'object' && 'message' in error) {
+    if (error && typeof error === "object" && "message" in error) {
       const message = String(error.message);
 
       // Réduire la priorité des erreurs réseau
       if (
-        message.includes('Network request failed') ||
-        message.includes('timeout of') ||
-        message.includes('Request aborted')
+        message.includes("Network request failed") ||
+        message.includes("timeout of") ||
+        message.includes("Request aborted")
       ) {
-        event.level = 'warning';
+        event.level = "warning";
       }
     }
 
@@ -76,18 +68,18 @@ Sentry.init({
   // Breadcrumbs: Filtrer les informations sensibles
   beforeBreadcrumb(breadcrumb) {
     // Redacter les headers sensibles dans les breadcrumbs HTTP
-    if (breadcrumb.category === 'http' && breadcrumb.data) {
+    if (breadcrumb.category === "http" && breadcrumb.data) {
       if (breadcrumb.data.headers) {
         breadcrumb.data.headers = {
           ...breadcrumb.data.headers,
-          Authorization: '[Filtered]',
+          Authorization: "[Filtered]",
         };
       }
     }
 
     // Limiter les breadcrumbs console
-    if (breadcrumb.category === 'console') {
-      return breadcrumb.level === 'error' ? breadcrumb : null;
+    if (breadcrumb.category === "console") {
+      return breadcrumb.level === "error" ? breadcrumb : null;
     }
 
     return breadcrumb;
@@ -134,9 +126,9 @@ function RootLayoutNav() {
       try {
         // Breadcrumb: Début de l'initialisation
         Sentry.addBreadcrumb({
-          category: 'app.lifecycle',
-          message: 'App initialization started',
-          level: 'info',
+          category: "app.lifecycle",
+          message: "App initialization started",
+          level: "info",
         });
 
         // 1. Délai initial pour laisser iOS et React Native s'initialiser complètement
@@ -156,16 +148,16 @@ function RootLayoutNav() {
         checkAuth().catch((e) => {
           console.log("Auth check failed:", e);
           Sentry.captureException(e, {
-            tags: { context: 'auth_check' },
-            level: 'warning',
+            tags: { context: "auth_check" },
+            level: "warning",
           });
         });
 
         checkOnboardingStatus().catch((e) => {
           console.log("Onboarding check failed:", e);
           Sentry.captureException(e, {
-            tags: { context: 'onboarding_check' },
-            level: 'warning',
+            tags: { context: "onboarding_check" },
+            level: "warning",
           });
         });
       } catch (error) {
@@ -173,8 +165,8 @@ function RootLayoutNav() {
 
         // Capturer les erreurs critiques d'initialisation
         Sentry.captureException(error, {
-          level: 'fatal',
-          tags: { context: 'app_init' },
+          level: "fatal",
+          tags: { context: "app_init" },
         });
 
         // On libère quand même l'UI pour éviter un écran blanc infini
@@ -190,20 +182,19 @@ function RootLayoutNav() {
     };
   }, []);
 
-
   // 2. Phase de Protection des routes
   useEffect(() => {
     if (!isReady) return;
 
     const inAuthGroup = segments[0] === "(auth)";
     const inOnboarding = segments[0] === "onboarding";
-    const currentRoute = segments.join('/') || '/';
+    const currentRoute = segments.join("/") || "/";
 
     // Breadcrumb: Tracking de navigation
     Sentry.addBreadcrumb({
-      category: 'navigation',
+      category: "navigation",
       message: `Navigated to ${currentRoute}`,
-      level: 'info',
+      level: "info",
       data: {
         route: currentRoute,
         isAuthenticated,
@@ -228,7 +219,6 @@ function RootLayoutNav() {
     // NOTE : On a supprimé la redirection automatique vers /paywall.
     // L'utilisateur est libre de naviguer tant qu'il a des crédits.
   }, [isAuthenticated, hasCompletedOnboarding, segments, isReady]);
-
 
   // Loader pendant l'initialisation (très court)
   if (!isReady) {
