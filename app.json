@@ -14,6 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
+      "newArchitectureEnabled": false,
       "bundleIdentifier": "com.maximekirch.relevo",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Relevo a besoin de votre micro pour enregistrer vos notes vocales à analyser.",

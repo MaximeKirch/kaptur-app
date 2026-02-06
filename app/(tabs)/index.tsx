@@ -2,7 +2,7 @@ import { View, Text, SafeAreaView, Alert, Button } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
-import * as Sentry from "@sentry/react-native";
+// import * as Sentry from "@sentry/react-native";
 
 // import * as Notifications from "expo-notifications";
 
