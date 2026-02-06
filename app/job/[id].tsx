@@ -12,15 +12,17 @@ import {
   Platform,
   KeyboardAvoidingView,
   Alert,
-  Keyboard,
-  TouchableWithoutFeedback,
+  NativeSyntheticEvent,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import QuillEditor, { QuillToolbar } from "react-native-cn-quill";
+import {
+  EnrichedTextInput,
+  type EnrichedTextInputInstance,
+} from "react-native-enriched";
 import showdown from "showdown";
 import { NodeHtmlMarkdown } from "node-html-markdown";
 import { generateAndSharePDF } from "../../src/utils/pdfGenerator";
@@ -43,16 +45,48 @@ const htmlToMdConverter = new NodeHtmlMarkdown(
   undefined, // data custom
 );
 
+// Bouton de la toolbar d'édition
+const ToolbarButton = ({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active?: boolean;
+  onPress: () => void;
+}) => (
+  <TouchableOpacity
+    onPress={onPress}
+    style={{
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 6,
+      backgroundColor: active ? "#3b82f6" : "transparent",
+    }}
+  >
+    <Text
+      style={{
+        color: active ? "#ffffff" : "#a1a1aa",
+        fontWeight: "bold",
+        fontSize: 14,
+      }}
+    >
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
+
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const _editor = useRef<QuillEditor>(null);
+  const _editor = useRef<EnrichedTextInputInstance>(null);
 
   const [activeTab, setActiveTab] = useState<
     "report" | "transcript" | "editor"
   >("report");
   const [editableMarkdown, setEditableMarkdown] = useState("");
   const [initialHtml, setInitialHtml] = useState("");
+  const [editorState, setEditorState] = useState<Record<string, any>>({});
 
   const {
     data: job,
@@ -85,7 +119,7 @@ export default function JobDetailScreen() {
         job.result?.raw_transcription ||
         "";
       setEditableMarkdown(rawText);
-      // Conversion MD -> HTML pour l'initialisation de Quill
+      // Conversion MD -> HTML pour l'initialisation de l'éditeur
       const html = mdToHtmlConverter.makeHtml(rawText);
       setInitialHtml(html);
     }
@@ -106,16 +140,12 @@ export default function JobDetailScreen() {
   };
 
   const handleExport = async () => {
-    // 1. Déterminer quel contenu utiliser
-    // Si on est dans l'éditeur, on prend le contenu HTML direct (WYSIWYG)
-    // Sinon, on prend le Markdown stocké et on le convertit
-
     let contentHtml = "";
-    let contentText = ""; // Pour le partage simple (WhatsApp etc)
+    let contentText = "";
 
     if (activeTab === "editor" && _editor.current) {
       // Depuis l'éditeur : on récupère le HTML direct
-      contentHtml = await _editor.current.getHtml();
+      contentHtml = await _editor.current.getHTML();
       // Pour le texte brut, on convertit
       contentText = htmlToMdConverter.translate(contentHtml);
     } else {
@@ -128,7 +158,6 @@ export default function JobDetailScreen() {
 
     if (!contentText) return;
 
-    // 2. Menu de choix (UX Native)
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         {
@@ -138,13 +167,11 @@ export default function JobDetailScreen() {
         },
         async (buttonIndex) => {
           if (buttonIndex === 1) {
-            // Partage Texte simple
             await Share.share({
               message: contentText,
               title: "Rapport Relevo",
             });
           } else if (buttonIndex === 2) {
-            // Génération PDF
             await generateAndSharePDF({
               projectName:
                 report.structured_report?.project_name || "Rapport de Chantier",
@@ -157,7 +184,6 @@ export default function JobDetailScreen() {
         },
       );
     } else {
-      // Fallback Android (Alert simple)
       Alert.alert("Exporter", "Quel format souhaitez-vous ?", [
         { text: "Annuler", style: "cancel" },
         {
@@ -183,21 +209,18 @@ export default function JobDetailScreen() {
     if (_editor.current) {
       try {
         // 1. Récupérer le HTML et convertir en MD
-        const html = await _editor.current.getHtml();
+        const html = await _editor.current.getHTML();
         const markdown = htmlToMdConverter.translate(html);
 
         // 2. Mise à jour Optimiste (UI immédiate)
         setEditableMarkdown(markdown);
 
         // 3. Appel API
-        // On affiche un petit loading ou on bloque le bouton idéalement,
-        // mais pour l'instant une alerte suffit.
         await api.patch(`/jobs/${id}`, {
           updatedReport: markdown,
         });
 
-        // 4. On rafraichit les données du cache React Query pour être sûr
-        // que tout est synchro (notamment si on re-génère le PDF derrière)
+        // 4. Rafraîchir le cache React Query
         refetch();
 
         Alert.alert(
@@ -232,7 +255,6 @@ export default function JobDetailScreen() {
   const isPending = job.status === "PENDING" || job.status === "PROCESSING";
   const report = job.result || {};
 
-  // Traduction des statuts en français
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "COMPLETED":
@@ -281,49 +303,131 @@ export default function JobDetailScreen() {
           style={{ flex: 1 }}
           keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
         >
-          <View className="flex-1 bg-white">
-            <QuillEditor
+          <View style={{ flex: 1, backgroundColor: "#09090b" }}>
+            <EnrichedTextInput
               ref={_editor}
-              initialHtml={initialHtml}
-              style={{ flex: 1, padding: 10 }}
-              quill={{
-                placeholder: "Commencez à éditer...",
-                modules: { toolbar: false },
-                theme: "snow",
+              defaultValue={initialHtml}
+              placeholder="Commencez à éditer..."
+              placeholderTextColor="#52525b"
+              cursorColor="#3b82f6"
+              selectionColor="rgba(59,130,246,0.4)"
+              scrollEnabled
+              style={{
+                flex: 1,
+                color: "#d4d4d8",
+                fontSize: 16,
+                padding: 16,
               }}
-              customStyles={[editorCustomStyles]}
-              webview={{
-                style: { backgroundColor: "#09090b" },
-                scrollEnabled: true,
+              htmlStyle={{
+                h1: { fontSize: 24, bold: true },
+                h2: { fontSize: 20, bold: true },
+                h3: { fontSize: 18, bold: true },
+                blockquote: {
+                  borderColor: "#3b82f6",
+                  borderWidth: 3,
+                  color: "#a1a1aa",
+                },
+                code: { color: "#f59e0b", backgroundColor: "#27272a" },
+                codeblock: {
+                  color: "#f59e0b",
+                  backgroundColor: "#27272a",
+                  borderRadius: 8,
+                },
+                ul: { bulletColor: "#3b82f6" },
               }}
-              onSelectionChange={() => {}}
+              onChangeState={(e: NativeSyntheticEvent<any>) =>
+                setEditorState(e.nativeEvent)
+              }
             />
 
-            {/* LA TOOLBAR NATIVE */}
-            {/* Elle est maintenant DANS le KeyboardAvoidingView, donc elle remontera */}
-            <QuillToolbar
-              editor={_editor}
-              options="full"
-              theme="dark"
-              styles={{
-                toolbar: {
-                  provider: (provided) => ({
-                    ...provided,
-                    backgroundColor: "#27272a",
-                    borderTopWidth: 0,
-                  }),
-                  root: (provided) => ({
-                    ...provided,
-                    backgroundColor: "#27272a",
-                    height: 50,
-                  }),
-                },
+            {/* TOOLBAR */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="always"
+              contentContainerStyle={{
+                paddingHorizontal: 8,
+                alignItems: "center",
+                gap: 2,
               }}
-            />
+              style={{
+                backgroundColor: "#27272a",
+                borderTopWidth: 1,
+                borderTopColor: "#3f3f46",
+                maxHeight: 50,
+              }}
+            >
+              <ToolbarButton
+                label="B"
+                active={editorState?.bold?.isActive}
+                onPress={() => _editor.current?.toggleBold()}
+              />
+              <ToolbarButton
+                label="I"
+                active={editorState?.italic?.isActive}
+                onPress={() => _editor.current?.toggleItalic()}
+              />
+              <ToolbarButton
+                label="U"
+                active={editorState?.underline?.isActive}
+                onPress={() => _editor.current?.toggleUnderline()}
+              />
+              <ToolbarButton
+                label="S"
+                active={editorState?.strikeThrough?.isActive}
+                onPress={() => _editor.current?.toggleStrikeThrough()}
+              />
+              <View
+                style={{
+                  width: 1,
+                  height: 24,
+                  backgroundColor: "#52525b",
+                  marginHorizontal: 4,
+                }}
+              />
+              <ToolbarButton
+                label="H1"
+                active={editorState?.h1?.isActive}
+                onPress={() => _editor.current?.toggleH1()}
+              />
+              <ToolbarButton
+                label="H2"
+                active={editorState?.h2?.isActive}
+                onPress={() => _editor.current?.toggleH2()}
+              />
+              <ToolbarButton
+                label="H3"
+                active={editorState?.h3?.isActive}
+                onPress={() => _editor.current?.toggleH3()}
+              />
+              <View
+                style={{
+                  width: 1,
+                  height: 24,
+                  backgroundColor: "#52525b",
+                  marginHorizontal: 4,
+                }}
+              />
+              <ToolbarButton
+                label="• Liste"
+                active={editorState?.unorderedList?.isActive}
+                onPress={() => _editor.current?.toggleUnorderedList()}
+              />
+              <ToolbarButton
+                label="1. Liste"
+                active={editorState?.orderedList?.isActive}
+                onPress={() => _editor.current?.toggleOrderedList()}
+              />
+              <ToolbarButton
+                label="Citation"
+                active={editorState?.blockQuote?.isActive}
+                onPress={() => _editor.current?.toggleBlockQuote()}
+              />
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       ) : (
-        // MODE LECTURE (Rien ne change ici)
+        // MODE LECTURE
         <ScrollView className="flex-1">
           <View className="p-6">
             <View className="flex-row justify-between items-start mb-4">
@@ -360,7 +464,6 @@ export default function JobDetailScreen() {
               </View>
             </View>
 
-            {/* Placeholder pour les rapports en cours de génération */}
             {isPending && (
               <View className="bg-surface p-8 rounded-xl border border-zinc-800 items-center justify-center">
                 <ActivityIndicator size="large" color="#fbbf24" />
@@ -374,7 +477,6 @@ export default function JobDetailScreen() {
               </View>
             )}
 
-            {/* Message d'erreur si échec */}
             {isFailed && (
               <View className="bg-red-500/5 p-6 rounded-xl border border-red-500/20">
                 <Text className="text-red-400 font-bold text-lg mb-2">
@@ -433,68 +535,6 @@ export default function JobDetailScreen() {
   );
 }
 
-// Styles CSS injectés dans la WebView de l'éditeur
-const editorCustomStyles = `
-  /* 1. CONFIGURATION GLOBALE */
-  body {
-    background-color: #09090b !important; /* Zinc-950 (Background App) */
-    color: #d4d4d8 !important; /* Zinc-300 (Idem Markdown Body) */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-  }
-
-  /* 2. TITRES (Pour matcher heading1, heading2...) */
-  h1 {
-    font-size: 32px;
-    line-height: 40px;
-    color: #3b82f6;
-  }
-   h2, h3, h4, h5, h6 {
-    color: #ffffff !important; /* Blanc pur */
-    font-weight: bold;
-    margin-top: 20px;
-    margin-bottom: 10px;
-  }
-
-  p,span {
-    color: #ffffff !important; /* Blanc pur */
-    font-weight: normal;
-    margin-top: 20px;
-    margin-bottom: 10px;
-  }
-
-  /* 3. GRAS (Pour matcher strong) */
-  strong, b {
-    color: #ffffff !important; /* Blanc pur */
-    font-weight: bold;
-  }
-
-  /* 4. LE CONTENEUR QUILL */
-  .ql-container.ql-snow {
-    border: none !important;
-  }
-
-  /* 5. LA ZONE D'ÉDITION */
-  .ql-editor {
-    font-size: 16px;       /* Idem Markdown fontSize */
-    line-height: 24px;     /* Idem Markdown lineHeight */
-    padding: 16px;         /* Padding confortable */
-    caret-color: #3b82f6;  /* Curseur Primary */
-  }
-
-  /* 6. LISTES */
-  li {
-    color: #d4d4d8 !important;
-  }
-
-  /* 7. PLACEHOLDER */
-  .ql-editor.ql-blank::before {
-    color: #52525b !important; /* Zinc-600 */
-    font-style: italic !important;
-    left: 16px !important;
-  }
-`;
 const markdownStyles = {
   body: { color: "#d4d4d8", fontSize: 16, lineHeight: 24 },
   heading1: {
