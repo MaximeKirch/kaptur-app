@@ -1,48 +1,22 @@
-import { useState, useEffect } from "react";
-// import { Audio } from "expo-av";
+import { useAudioPlayer as useExpoPlayer, useAudioPlayerStatus } from "expo-audio";
 
 export const useAudioPlayer = (uri: string | null) => {
-  // const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const player = useExpoPlayer(uri ?? null);
+  const status = useAudioPlayerStatus(player);
 
-  // COMMENTED OUT FOR DEBUGGING
-  // Nettoyage auto si le composant démonte ou si l'URI change
-  // useEffect(() => {
-  //   return () => {
-  //     sound?.unloadAsync();
-  //   };
-  // }, [sound]);
+  const togglePlay = () => {
+    if (!uri) return;
 
-  const togglePlay = async () => {
-    // COMMENTED OUT FOR DEBUGGING
-    // if (!uri) return;
-
-    // if (sound) {
-    //   // Si le son est déjà chargé
-    //   if (isPlaying) {
-    //     await sound.pauseAsync();
-    //     setIsPlaying(false);
-    //   } else {
-    //     await sound.playAsync();
-    //     setIsPlaying(true);
-    //   }
-    // } else {
-    //   // Premier chargement
-    //   const { sound: newSound } = await Audio.Sound.createAsync({ uri });
-    //   setSound(newSound);
-    //   setIsPlaying(true);
-    //   await newSound.playAsync();
-
-    //   // Callback fin de lecture
-    //   newSound.setOnPlaybackStatusUpdate((status) => {
-    //     if (status.isLoaded && status.didJustFinish) {
-    //       setIsPlaying(false);
-    //       newSound.setPositionAsync(0); // Rembobiner
-    //     }
-    //   });
-    // }
-    console.log("Audio playback disabled for debugging");
+    if (status.playing) {
+      player.pause();
+    } else {
+      // expo-audio arrête à la fin, il faut rembobiner pour rejouer
+      if (status.currentTime >= status.duration && status.duration > 0) {
+        player.seekTo(0);
+      }
+      player.play();
+    }
   };
 
-  return { isPlaying, togglePlay };
+  return { isPlaying: status.playing, togglePlay };
 };

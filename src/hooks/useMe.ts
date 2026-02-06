@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../services/api";
 import { useAuthStore } from "../store/authStore";
-import { useUserStore } from "../store/userStore"; // Supposant que tu as un store pour les crédits
+import { useUserStore } from "../store/userStore";
 
 export const useMe = () => {
   const setCredits = useUserStore((state) => state.setCredits);
@@ -18,7 +18,6 @@ export const useMe = () => {
 
       return res.data;
     },
-    // On ne veut pas que ça spamme, mais on veut que ce soit frais quand on focus l'app
     staleTime: 1000 * 60 * 5, // Données considérées fraîches pendant 5 min
     refetchOnWindowFocus: true, // Magique : recharge dès que l'utilisateur revient sur l'app
   });

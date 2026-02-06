@@ -18,8 +18,7 @@ export const useJobStatus = (jobId: string | null) => {
       const { data } = await api.get<JobResponse>(`/jobs/${jobId}`);
       return data;
     },
-    // C'est ici que la magie opère :
-    enabled: !!jobId, // Ne lance la requête que si on a un ID
+    enabled: !!jobId,
     refetchInterval: (query) => {
       const status = query.state.data?.status;
 
@@ -28,11 +27,8 @@ export const useJobStatus = (jobId: string | null) => {
         return false;
       }
 
-      // Stratégie simple : Toutes les 2s tant que ça tourne.
-      // Tu pourrais faire varier ça si tu voulais être plus agressif au début.
       return 2000;
     },
-    // Pas besoin de garder ça en cache longtemps si on quitte l'écran
     gcTime: 0,
   });
 };

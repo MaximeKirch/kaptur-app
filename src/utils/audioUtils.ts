@@ -1,38 +1,37 @@
-// src/utils/audioUtils.ts
-// import { Audio } from "expo-av";
+import { createAudioPlayer } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
 
 /**
  * Récupère la durée d'un fichier audio en secondes.
- * Charge le fichier temporairement juste pour lire les métadonnées.
+ * Crée un player temporaire pour lire les métadonnées.
  */
 export const getAudioDurationInSeconds = async (
   uri: string,
 ): Promise<number> => {
-  // COMMENTED OUT FOR DEBUGGING
-  // try {
-  //   const { sound, status } = await Audio.Sound.createAsync(
-  //     { uri },
-  //     { shouldPlay: false }, // On ne veut pas jouer, juste lire les infos
-  //   );
+  try {
+    const player = createAudioPlayer(uri);
 
-  //   let duration = 0;
+    return new Promise<number>((resolve) => {
+      const checkLoaded = setInterval(() => {
+        if (player.isLoaded) {
+          const duration = player.duration;
+          clearInterval(checkLoaded);
+          player.remove();
+          resolve(duration);
+        }
+      }, 50);
 
-  //   if (status.isLoaded && status.durationMillis) {
-  //     duration = status.durationMillis / 1000;
-  //   }
-
-  //   // CRUCIAL : On libère la mémoire immédiatement
-  //   await sound.unloadAsync();
-
-  //   return duration;
-  // } catch (error) {
-  //   console.error("Erreur lors de l'analyse du fichier audio:", error);
-  //   // En cas d'erreur, on retourne 0 (le composant UI devra gérer ça)
-  //   return 0;
-  // }
-  console.log("Audio duration check disabled for debugging");
-  return 0;
+      // Timeout après 5 secondes
+      setTimeout(() => {
+        clearInterval(checkLoaded);
+        player.remove();
+        resolve(0);
+      }, 5000);
+    });
+  } catch (error) {
+    console.error("Erreur lors de l'analyse du fichier audio:", error);
+    return 0;
+  }
 };
 
 /**
