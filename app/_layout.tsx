@@ -26,19 +26,10 @@ Sentry.init({
   tracesSampleRate: 1.0, // 100% initialement, à réduire à 0.2 plus tard
 
   // Adds more context data to events
-  sendDefaultPii: true, // Désactivé pour privacy
+  sendDefaultPii: true,
 
   // Enable Logs
   enableLogs: true,
-
-  // Configure Session Replay
-  replaysSessionSampleRate: 0.1, // 10% des sessions
-  replaysOnErrorSampleRate: 1.0, // 100% des sessions avec erreurs
-  integrations: [Sentry.mobileReplayIntegration()],
-
-  // Enable automatic performance instrumentation
-  enableAutoPerformanceTracing: true,
-  enableUserInteractionTracing: true,
 
   // Privacy: Filtrer les données sensibles
   beforeSend(event, hint) {
