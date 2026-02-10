@@ -19,12 +19,10 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-// TEMPORARILY DISABLED FOR TESTING
-// import {
-//   EnrichedTextInput,
-//   type EnrichedTextInputInstance,
-// } from "react-native-enriched";
-type EnrichedTextInputInstance = any;
+import {
+  EnrichedTextInput,
+  type EnrichedTextInputInstance,
+} from "react-native-enriched";
 import showdown from "showdown";
 import { NodeHtmlMarkdown } from "node-html-markdown";
 import { generateAndSharePDF } from "../../src/utils/pdfGenerator";
@@ -306,13 +304,7 @@ export default function JobDetailScreen() {
           keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
         >
           <View style={{ flex: 1, backgroundColor: "#09090b" }}>
-            {/* TEMPORARILY DISABLED FOR TESTING */}
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 16 }}>
-              <Text style={{ color: "#a1a1aa", fontSize: 16, textAlign: "center" }}>
-                Éditeur temporairement désactivé pour test
-              </Text>
-            </View>
-            {/* <EnrichedTextInput
+            <EnrichedTextInput
               ref={_editor}
               defaultValue={initialHtml}
               placeholder="Commencez à éditer..."
@@ -346,7 +338,7 @@ export default function JobDetailScreen() {
               onChangeState={(e: NativeSyntheticEvent<any>) =>
                 setEditorState(e.nativeEvent)
               }
-            /> */}
+            />
 
             {/* TOOLBAR */}
             <ScrollView
