@@ -1,5 +1,5 @@
 import { createAudioPlayer } from "expo-audio";
-import * as FileSystem from "expo-file-system/legacy";
+import * as FileSystem from "expo-file-system";
 
 /**
  * Récupère la durée d'un fichier audio en secondes.
