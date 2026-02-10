@@ -33,14 +33,6 @@
     "plugins": [
       "expo-router",
       [
-        "@sentry/react-native/expo",
-        {
-          "url": "https://sentry.io/",
-          "project": "relevo-app",
-          "organization": "maxime-kirch-ri"
-        }
-      ],
-      [
         "expo-audio",
         {
           "microphonePermission": "Relevo a besoin de votre micro pour enregistrer vos notes vocales à analyser."
