@@ -30,6 +30,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await AsyncStorage.setItem(TOKEN_KEY, token);
     await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
     set({ token, refreshToken, user, isAuthenticated: true });
+
+    // Persister les crédits de l'utilisateur
+    if (user?.credits !== undefined) {
+      useUserStore.getState().setCredits(user.credits);
+    }
+
     if (user?.id) {
       try {
         const isConfigured = await Purchases.isConfigured();
@@ -46,12 +52,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     await AsyncStorage.removeItem(TOKEN_KEY);
     await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
+    await AsyncStorage.removeItem("relevo_credits"); // Nettoyer les crédits aussi
     set({
       token: null,
       refreshToken: null,
       user: null,
       isAuthenticated: false,
     });
+    // Réinitialiser les crédits dans le store
+    useUserStore.getState().setCredits(0);
+
     try {
       const isConfigured = await Purchases.isConfigured();
       if (isConfigured) {
@@ -158,10 +168,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (token && refreshToken) {
         set({ token, refreshToken, isAuthenticated: true });
-        // On fetch le user plus tard, tranquillement
+
+        // Charger les crédits depuis le cache local d'abord (instantané)
+        await useUserStore.getState().loadCredits();
+
+        // Puis mettre à jour depuis l'API en background (sans bloquer)
         api
           .get("/auth/me")
-          .then((res) => set({ user: res.data }))
+          .then((res) => {
+            set({ user: res.data });
+            // Mettre à jour les crédits depuis l'API (plus récent)
+            if (res.data.credits !== undefined) {
+              useUserStore.getState().setCredits(res.data.credits);
+            }
+          })
           .catch(() => null);
       } else {
         set({ isAuthenticated: false });
