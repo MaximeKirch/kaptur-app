@@ -27,7 +27,16 @@ export const useUserStore = create<UserState>((set) => ({
   },
 
   checkOnboardingStatus: async () => {
-    const completed = await AsyncStorage.getItem(ONBOARDING_KEY);
-    set({ hasCompletedOnboarding: completed === "true" });
+    try {
+      // Double protection : timeout + catch
+      const completed = await Promise.race([
+        AsyncStorage.getItem(ONBOARDING_KEY),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+      ]).catch(() => null);
+      set({ hasCompletedOnboarding: completed === "true" });
+    } catch (e) {
+      console.error("checkOnboardingStatus error:", e);
+      set({ hasCompletedOnboarding: false });
+    }
   },
 }));

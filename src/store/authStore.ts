@@ -147,8 +147,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // src/store/authStore.ts
   checkAuth: async () => {
     try {
-      const token = await AsyncStorage.getItem(TOKEN_KEY).catch(() => null);
-      const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY).catch(() => null);
+      // Double protection : timeout + catch
+      const token = await Promise.race([
+        AsyncStorage.getItem(TOKEN_KEY),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+      ]).catch(() => null);
+
+      const refreshToken = await Promise.race([
+        AsyncStorage.getItem(REFRESH_TOKEN_KEY),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+      ]).catch(() => null);
 
       if (token && refreshToken) {
         set({ token, refreshToken, isAuthenticated: true });
@@ -162,6 +170,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch (e) {
       // Si ça crash ici, on neutralise
+      console.error("checkAuth error:", e);
       set({ isAuthenticated: false });
     }
   },

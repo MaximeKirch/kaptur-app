@@ -124,34 +124,45 @@ function RootLayoutNav() {
         // });
 
         // 1. Délai initial pour laisser iOS et React Native s'initialiser complètement
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Augmenté à 1500ms pour laisser tous les TurboModules s'initialiser
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
         if (!isMounted) return;
 
         // 2. On libère l'UI d'abord (sans modules natifs)
         setIsReady(true);
 
-        // 3. Délai supplémentaire pour que l'UI soit montée
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // 3. Délai supplémentaire pour que l'UI soit montée et TurboModules prêts
+        // Augmenté à 1500ms pour AsyncStorage
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
         if (!isMounted) return;
 
-        // 4. Initialiser les stores (auth et onboarding)
-        checkAuth().catch((e) => {
-          console.log("Auth check failed:", e);
-          // Sentry.captureException(e, {
-          //   tags: { context: "auth_check" },
-          //   level: "warning",
-          // });
-        });
+        // 4. Initialiser les stores (auth et onboarding) de manière ultra-défensive
+        // On wrappe chaque appel individuellement pour éviter qu'un crash n'affecte l'autre
+        setTimeout(() => {
+          if (isMounted) {
+            checkAuth().catch((e) => {
+              console.log("Auth check failed:", e);
+              // Sentry.captureException(e, {
+              //   tags: { context: "auth_check" },
+              //   level: "warning",
+              // });
+            });
+          }
+        }, 500);
 
-        checkOnboardingStatus().catch((e) => {
-          console.log("Onboarding check failed:", e);
-          // Sentry.captureException(e, {
-          //   tags: { context: "onboarding_check" },
-          //   level: "warning",
-          // });
-        });
+        setTimeout(() => {
+          if (isMounted) {
+            checkOnboardingStatus().catch((e) => {
+              console.log("Onboarding check failed:", e);
+              // Sentry.captureException(e, {
+              //   tags: { context: "onboarding_check" },
+              //   level: "warning",
+              // });
+            });
+          }
+        }, 1000);
       } catch (error) {
         console.error("Critical init error:", error);
 
