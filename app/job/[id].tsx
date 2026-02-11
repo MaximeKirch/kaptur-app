@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
+import { markdownStyles } from "./markdownStyles";
 import Markdown from "react-native-markdown-display";
 import { useEffect, useState, useRef } from "react";
 import {
@@ -12,17 +13,13 @@ import {
   Platform,
   KeyboardAvoidingView,
   Alert,
-  NativeSyntheticEvent,
+  TextInput,
+  type TextInput as TextInputType,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
-import * as Clipboard from "expo-clipboard";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import {
-  EnrichedTextInput,
-  type EnrichedTextInputInstance,
-} from "react-native-enriched";
 import showdown from "showdown";
 import { NodeHtmlMarkdown } from "node-html-markdown";
 import { generateAndSharePDF } from "../../src/utils/pdfGenerator";
@@ -36,23 +33,83 @@ const mdToHtmlConverter = new showdown.Converter({
   simpleLineBreaks: true,
   strikethrough: true,
   tables: true,
+  noHeaderId: true, // IMPORTANT : Ne pas générer d'IDs pour les headings
+  simplifiedAutoLink: true,
+  literalMidWordUnderscores: true,
+  ghCodeBlocks: true,
 });
 
 // HTML -> MD (Pour SAUVEGARDER) - NodeHtmlMarkdown n'a pas besoin de DOM
 const htmlToMdConverter = new NodeHtmlMarkdown(
-  {},
+  {
+    // Options pour améliorer la conversion HTML → MD
+    bulletMarker: "-",
+    codeBlockStyle: "fenced",
+    emDelimiter: "*",
+    strongDelimiter: "**",
+    useLinkReferenceDefinitions: false,
+    keepDataImages: false,
+  },
   undefined, // options custom
   undefined, // data custom
 );
 
-// Bouton de la toolbar d'édition
+// Fonction utilitaire pour détecter si le contenu est du HTML et le convertir en MD si nécessaire
+const normalizeToMarkdown = (content: string): string => {
+  if (!content) return "";
+
+  // Détection simple : si on trouve des balises HTML, c'est du HTML
+  const hasHtmlTags = /<[^>]+>/g.test(content);
+
+  let markdown = content;
+
+  if (hasHtmlTags) {
+    // Convertir HTML → MD
+    markdown = htmlToMdConverter.translate(content);
+  }
+
+  // Nettoyage et validation du markdown généré
+  markdown = markdown
+    // CRITIQUE : Retirer TOUS les backslashes d'échappement
+    // node-html-markdown échappe tout par sécurité, mais on veut interpréter le markdown
+    .replace(/\\([*_#[\]()~`>+\-.!|{}])/g, "$1") // Retire \ devant les caractères markdown
+    .replace(/\\\\/g, "\\") // Convertir \\ en \
+
+    // Cas spécial : nettoyer les numéros de liste (1\. → 1.)
+    .replace(/(\d+)\\\./g, "$1.")
+
+    // Supprimer les #### en fin de ligne (ex: "#### Titre ####" → "#### Titre")
+    .replace(/^(#{1,6}\s+.+?)\s+#{1,6}\s*$/gm, "$1")
+
+    // Supprimer les lignes contenant uniquement #### (headings vides)
+    .replace(/^\s*#{1,6}\s*$/gm, "")
+
+    // Supprimer les lignes vides qui ne contiennent que des espaces
+    .replace(/^\s*$/gm, "")
+
+    // Assurer qu'il y a un espace après les # pour les headings valides
+    .replace(/^(#{1,6})([^\s#])/gm, "$1 $2")
+
+    // Supprimer les lignes vides multiples (max 2 sauts de ligne)
+    .replace(/\n{3,}/g, "\n\n")
+
+    // Nettoyer les espaces en fin de ligne
+    .replace(/[ \t]+$/gm, "")
+
+    // Trim général
+    .trim();
+
+  return markdown;
+};
+
+// Composant bouton de toolbar
 const ToolbarButton = ({
   label,
-  active,
   onPress,
+  icon,
 }: {
-  label: string;
-  active?: boolean;
+  label?: string;
+  icon?: string;
   onPress: () => void;
 }) => (
   <TouchableOpacity
@@ -61,17 +118,14 @@ const ToolbarButton = ({
       paddingHorizontal: 12,
       paddingVertical: 8,
       borderRadius: 6,
-      backgroundColor: active ? "#3b82f6" : "transparent",
+      backgroundColor: "#27272a",
+      minWidth: 36,
+      alignItems: "center",
+      justifyContent: "center",
     }}
   >
-    <Text
-      style={{
-        color: active ? "#ffffff" : "#a1a1aa",
-        fontWeight: "bold",
-        fontSize: 14,
-      }}
-    >
-      {label}
+    <Text style={{ color: "#d4d4d8", fontWeight: "600", fontSize: 14 }}>
+      {icon || label}
     </Text>
   </TouchableOpacity>
 );
@@ -79,14 +133,15 @@ const ToolbarButton = ({
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const _editor = useRef<EnrichedTextInputInstance>(null);
+  const editorInputRef = useRef<TextInputType>(null);
+  const [selection, setSelection] = useState({ start: 0, end: 0 });
 
   const [activeTab, setActiveTab] = useState<
     "report" | "transcript" | "editor"
   >("report");
   const [editableMarkdown, setEditableMarkdown] = useState("");
-  const [initialHtml, setInitialHtml] = useState("");
-  const [editorState, setEditorState] = useState<Record<string, any>>({});
+  const [editorMarkdown, setEditorMarkdown] = useState("");
+  const [editorMode, setEditorMode] = useState<"edit" | "preview">("edit");
 
   const {
     data: job,
@@ -118,10 +173,16 @@ export default function JobDetailScreen() {
         job.result?.structured_report?.formatted_report ||
         job.result?.raw_transcription ||
         "";
-      setEditableMarkdown(rawText);
-      // Conversion MD -> HTML pour l'initialisation de l'éditeur
-      const html = mdToHtmlConverter.makeHtml(rawText);
-      setInitialHtml(html);
+
+      // Pipeline unique : TOUJOURS normaliser en Markdown propre d'abord
+      // (que ce soit du HTML, du Markdown, ou un mélange des deux)
+      const cleanMarkdown = normalizeToMarkdown(rawText);
+
+      // Pour l'affichage en mode lecture : utiliser le Markdown propre
+      setEditableMarkdown(cleanMarkdown);
+
+      // Pour l'éditeur : initialiser avec le markdown propre
+      setEditorMarkdown(cleanMarkdown);
     }
   }, [job]);
 
@@ -140,21 +201,12 @@ export default function JobDetailScreen() {
   };
 
   const handleExport = async () => {
-    let contentHtml = "";
-    let contentText = "";
+    // Utiliser le markdown édité si on est dans l'éditeur, sinon le markdown affiché
+    const contentText =
+      activeTab === "editor" ? editorMarkdown : editableMarkdown;
 
-    if (activeTab === "editor" && _editor.current) {
-      // Depuis l'éditeur : on récupère le HTML direct
-      contentHtml = await _editor.current.getHTML();
-      // Pour le texte brut, on convertit
-      contentText = htmlToMdConverter.translate(contentHtml);
-    } else {
-      // Depuis la lecture seule : on a le Markdown, on le convertit en HTML pour le PDF
-      const rawMarkdown =
-        editableMarkdown || report.structured_report?.formatted_report || "";
-      contentText = rawMarkdown;
-      contentHtml = mdToHtmlConverter.makeHtml(rawMarkdown);
-    }
+    // Convertir le markdown en HTML pour le PDF
+    const contentHtml = mdToHtmlConverter.makeHtml(contentText);
 
     if (!contentText) return;
 
@@ -205,35 +257,75 @@ export default function JobDetailScreen() {
     }
   };
 
+  // Fonctions helper pour la toolbar markdown
+  const insertMarkdown = (before: string, after: string = "") => {
+    const start = selection.start;
+    const end = selection.end;
+    const selectedText = editorMarkdown.substring(start, end);
+
+    const newText =
+      editorMarkdown.substring(0, start) +
+      before +
+      selectedText +
+      after +
+      editorMarkdown.substring(end);
+
+    setEditorMarkdown(newText);
+
+    // Remettre le focus et la sélection
+    setTimeout(() => {
+      editorInputRef.current?.focus();
+      const newCursorPos =
+        start + before.length + selectedText.length + after.length;
+      setSelection({ start: newCursorPos, end: newCursorPos });
+    }, 10);
+  };
+
+  const insertLinePrefix = (prefix: string) => {
+    const start = selection.start;
+    // Trouver le début de la ligne
+    const lineStart = editorMarkdown.lastIndexOf("\n", start - 1) + 1;
+
+    const newText =
+      editorMarkdown.substring(0, lineStart) +
+      prefix +
+      editorMarkdown.substring(lineStart);
+
+    setEditorMarkdown(newText);
+
+    setTimeout(() => {
+      editorInputRef.current?.focus();
+      const newCursorPos = start + prefix.length;
+      setSelection({ start: newCursorPos, end: newCursorPos });
+    }, 10);
+  };
+
   const handleSaveEditor = async () => {
-    if (_editor.current) {
-      try {
-        // 1. Récupérer le HTML et convertir en MD
-        const html = await _editor.current.getHTML();
-        const markdown = htmlToMdConverter.translate(html);
+    try {
+      // 1. Récupérer le markdown édité
+      const markdown = editorMarkdown;
 
-        // 2. Mise à jour Optimiste (UI immédiate)
-        setEditableMarkdown(markdown);
+      // 2. Mise à jour Optimiste (UI immédiate)
+      setEditableMarkdown(markdown);
 
-        // 3. Appel API
-        await api.patch(`/jobs/${id}`, {
-          updatedReport: markdown,
-        });
+      // 3. Appel API
+      await api.patch(`/jobs/${id}`, {
+        updatedReport: markdown,
+      });
 
-        // 4. Rafraîchir le cache React Query
-        refetch();
+      // 4. Rafraîchir le cache React Query
+      refetch();
 
-        Alert.alert(
-          "Succès",
-          "Rapport mis à jour et sauvegardé en base de données.",
-        );
-      } catch (e) {
-        console.error("Erreur sauvegarde", e);
-        Alert.alert(
-          "Erreur",
-          "Impossible de sauvegarder les modifications sur le serveur.",
-        );
-      }
+      Alert.alert(
+        "Succès",
+        "Rapport mis à jour et sauvegardé en base de données.",
+      );
+    } catch (e) {
+      console.error("Erreur sauvegarde", e);
+      Alert.alert(
+        "Erreur",
+        "Impossible de sauvegarder les modifications sur le serveur.",
+      );
     }
   };
 
@@ -304,126 +396,188 @@ export default function JobDetailScreen() {
           keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
         >
           <View style={{ flex: 1, backgroundColor: "#09090b" }}>
-            <EnrichedTextInput
-              ref={_editor}
-              defaultValue={initialHtml}
-              placeholder="Commencez à éditer..."
-              placeholderTextColor="#52525b"
-              cursorColor="#3b82f6"
-              selectionColor="rgba(59,130,246,0.4)"
-              scrollEnabled
+            {/* Toggle Edit/Preview */}
+            <View
               style={{
-                flex: 1,
-                color: "#d4d4d8",
-                fontSize: 16,
-                padding: 16,
-              }}
-              htmlStyle={{
-                h1: { fontSize: 24, bold: true },
-                h2: { fontSize: 20, bold: true },
-                h3: { fontSize: 18, bold: true },
-                blockquote: {
-                  borderColor: "#3b82f6",
-                  borderWidth: 3,
-                  color: "#a1a1aa",
-                },
-                code: { color: "#f59e0b", backgroundColor: "#27272a" },
-                codeblock: {
-                  color: "#f59e0b",
-                  backgroundColor: "#27272a",
-                  borderRadius: 8,
-                },
-                ul: { bulletColor: "#3b82f6" },
-              }}
-              onChangeState={(e: NativeSyntheticEvent<any>) =>
-                setEditorState(e.nativeEvent)
-              }
-            />
-
-            {/* TOOLBAR */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyboardShouldPersistTaps="always"
-              contentContainerStyle={{
-                paddingHorizontal: 8,
-                alignItems: "center",
-                gap: 2,
-              }}
-              style={{
-                backgroundColor: "#27272a",
-                borderTopWidth: 1,
-                borderTopColor: "#3f3f46",
-                maxHeight: 50,
+                flexDirection: "row",
+                backgroundColor: "#18181b",
+                padding: 8,
+                gap: 8,
+                borderBottomWidth: 1,
+                borderBottomColor: "#27272a",
               }}
             >
-              <ToolbarButton
-                label="B"
-                active={editorState?.bold?.isActive}
-                onPress={() => _editor.current?.toggleBold()}
-              />
-              <ToolbarButton
-                label="I"
-                active={editorState?.italic?.isActive}
-                onPress={() => _editor.current?.toggleItalic()}
-              />
-              <ToolbarButton
-                label="U"
-                active={editorState?.underline?.isActive}
-                onPress={() => _editor.current?.toggleUnderline()}
-              />
-              <ToolbarButton
-                label="S"
-                active={editorState?.strikeThrough?.isActive}
-                onPress={() => _editor.current?.toggleStrikeThrough()}
-              />
-              <View
+              <TouchableOpacity
+                onPress={() => setEditorMode("edit")}
                 style={{
-                  width: 1,
-                  height: 24,
-                  backgroundColor: "#52525b",
-                  marginHorizontal: 4,
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 8,
+                  backgroundColor:
+                    editorMode === "edit" ? "#3b82f6" : "transparent",
                 }}
-              />
-              <ToolbarButton
-                label="H1"
-                active={editorState?.h1?.isActive}
-                onPress={() => _editor.current?.toggleH1()}
-              />
-              <ToolbarButton
-                label="H2"
-                active={editorState?.h2?.isActive}
-                onPress={() => _editor.current?.toggleH2()}
-              />
-              <ToolbarButton
-                label="H3"
-                active={editorState?.h3?.isActive}
-                onPress={() => _editor.current?.toggleH3()}
-              />
-              <View
+              >
+                <Text
+                  style={{
+                    color: editorMode === "edit" ? "#ffffff" : "#71717a",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                    fontSize: 14,
+                  }}
+                >
+                  ✏️ Éditer
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setEditorMode("preview")}
                 style={{
-                  width: 1,
-                  height: 24,
-                  backgroundColor: "#52525b",
-                  marginHorizontal: 4,
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 8,
+                  backgroundColor:
+                    editorMode === "preview" ? "#3b82f6" : "transparent",
                 }}
-              />
-              <ToolbarButton
-                label="• Liste"
-                active={editorState?.unorderedList?.isActive}
-                onPress={() => _editor.current?.toggleUnorderedList()}
-              />
-              <ToolbarButton
-                label="1. Liste"
-                active={editorState?.orderedList?.isActive}
-                onPress={() => _editor.current?.toggleOrderedList()}
-              />
-              <ToolbarButton
-                label="Citation"
-                active={editorState?.blockQuote?.isActive}
-                onPress={() => _editor.current?.toggleBlockQuote()}
-              />
-            </ScrollView>
+              >
+                <Text
+                  style={{
+                    color: editorMode === "preview" ? "#ffffff" : "#71717a",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                    fontSize: 14,
+                  }}
+                >
+                  👁 Prévisualiser
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Contenu selon le mode */}
+            {editorMode === "edit" ? (
+              // Mode Édition : TextInput + Toolbar
+              <>
+                <ScrollView style={{ flex: 1 }}>
+                  <TextInput
+                    ref={editorInputRef}
+                    value={editorMarkdown}
+                    onChangeText={setEditorMarkdown}
+                    onSelectionChange={(e) =>
+                      setSelection(e.nativeEvent.selection)
+                    }
+                    placeholder="Éditez votre rapport en markdown..."
+                    placeholderTextColor="#52525b"
+                    multiline
+                    style={{
+                      flex: 1,
+                      minHeight: 500,
+                      color: "#d4d4d8",
+                      fontSize: 15,
+                      padding: 16,
+                      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+                      lineHeight: 22,
+                    }}
+                  />
+                </ScrollView>
+
+                {/* TOOLBAR MARKDOWN */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="always"
+                  contentContainerStyle={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    gap: 8,
+                  }}
+                  style={{
+                    backgroundColor: "#18181b",
+                    borderTopWidth: 1,
+                    borderTopColor: "#27272a",
+                    maxHeight: 56,
+                  }}
+                >
+                  <ToolbarButton
+                    label="B"
+                    onPress={() => insertMarkdown("**", "**")}
+                  />
+                  <ToolbarButton
+                    label="I"
+                    onPress={() => insertMarkdown("*", "*")}
+                  />
+                  <ToolbarButton
+                    label="~~"
+                    onPress={() => insertMarkdown("~~", "~~")}
+                  />
+                  <View
+                    style={{
+                      width: 1,
+                      height: 32,
+                      backgroundColor: "#3f3f46",
+                    }}
+                  />
+                  <ToolbarButton
+                    label="H1"
+                    onPress={() => insertLinePrefix("# ")}
+                  />
+                  <ToolbarButton
+                    label="H2"
+                    onPress={() => insertLinePrefix("## ")}
+                  />
+                  <ToolbarButton
+                    label="H3"
+                    onPress={() => insertLinePrefix("### ")}
+                  />
+                  <ToolbarButton
+                    label="H4"
+                    onPress={() => insertLinePrefix("#### ")}
+                  />
+                  <View
+                    style={{
+                      width: 1,
+                      height: 32,
+                      backgroundColor: "#3f3f46",
+                    }}
+                  />
+                  <ToolbarButton
+                    icon="•"
+                    onPress={() => insertLinePrefix("- ")}
+                  />
+                  <ToolbarButton
+                    label="1."
+                    onPress={() => insertLinePrefix("1. ")}
+                  />
+                  <ToolbarButton
+                    icon=">"
+                    onPress={() => insertLinePrefix("> ")}
+                  />
+                  <View
+                    style={{
+                      width: 1,
+                      height: 32,
+                      backgroundColor: "#3f3f46",
+                    }}
+                  />
+                  <ToolbarButton
+                    icon="`"
+                    onPress={() => insertMarkdown("`", "`")}
+                  />
+                  <ToolbarButton
+                    label="```"
+                    onPress={() => insertMarkdown("\n```\n", "\n```\n")}
+                  />
+                  <ToolbarButton
+                    label="[]()"
+                    onPress={() => insertMarkdown("[", "](url)")}
+                  />
+                </ScrollView>
+              </>
+            ) : (
+              // Mode Preview : Afficher le rendu avec Markdown
+              <ScrollView style={{ flex: 1 }}>
+                <View style={{ padding: 16 }}>
+                  <Markdown style={markdownStyles}>{editorMarkdown}</Markdown>
+                </View>
+              </ScrollView>
+            )}
           </View>
         </KeyboardAvoidingView>
       ) : (
@@ -534,35 +688,3 @@ export default function JobDetailScreen() {
     </SafeAreaView>
   );
 }
-
-const markdownStyles = {
-  body: { color: "#d4d4d8", fontSize: 16, lineHeight: 24 },
-  heading1: {
-    color: "#ffffff",
-    fontSize: 24,
-    fontWeight: "bold" as const,
-    marginBottom: 10,
-    marginTop: 20,
-  },
-  heading2: {
-    color: "#ffffff",
-    fontSize: 20,
-    fontWeight: "bold" as const,
-    marginBottom: 10,
-    marginTop: 15,
-  },
-  heading3: {
-    color: "#3b82f6",
-    fontSize: 18,
-    fontWeight: "bold" as const,
-    marginBottom: 5,
-    marginTop: 10,
-  },
-  strong: { color: "#ffffff", fontWeight: "bold" as const },
-  em: { color: "#a1a1aa", fontStyle: "italic" as const },
-  bullet_list: { marginBottom: 10 },
-  ordered_list: { marginBottom: 10 },
-  bullet_list_icon: { color: "#3b82f6", fontSize: 20 },
-  bullet_list_content: { fontSize: 16, lineHeight: 24 },
-  paragraph: { marginTop: 0, marginBottom: 10 },
-};
