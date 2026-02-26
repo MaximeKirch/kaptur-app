@@ -65,7 +65,7 @@ export const usePushNotifications = (
         })
       ).data;
 
-      console.log("Push Token:", token);
+      // Token enregistré avec succès
     } else {
       console.log("Must use physical device for Push Notifications");
     }

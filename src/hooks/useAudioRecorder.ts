@@ -9,6 +9,7 @@ import {
 } from "expo-audio";
 import * as DocumentPicker from "expo-document-picker";
 import { Alert, Linking, Platform } from "react-native";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { getAudioDurationInSeconds } from "../utils/audioUtils";
 
 export type RecordingStatus = "idle" | "recording" | "review";
@@ -33,6 +34,8 @@ export const useAudioRecorderHook = () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      // S'assurer que keep-awake est désactivé au démontage du composant
+      deactivateKeepAwake("recording");
     };
   }, []);
 
@@ -90,6 +93,9 @@ export const useAudioRecorderHook = () => {
       await recorder.prepareToRecordAsync();
       recorder.record();
 
+      // Empêcher le verrouillage du téléphone pendant l'enregistrement
+      await activateKeepAwakeAsync("recording");
+
       setStatus("recording");
       setDuration(0);
     } catch (err) {
@@ -108,6 +114,9 @@ export const useAudioRecorderHook = () => {
       await recorder.stop();
       await setAudioModeAsync({ allowsRecording: false });
 
+      // Réactiver le verrouillage automatique
+      deactivateKeepAwake("recording");
+
       const uri = recorder.uri;
       if (uri) {
         setAudioUri(uri);
@@ -116,6 +125,8 @@ export const useAudioRecorderHook = () => {
       }
     } catch (error) {
       console.log("Erreur lors de l'arrêt", error);
+      // S'assurer de désactiver keep-awake même en cas d'erreur
+      deactivateKeepAwake("recording");
     }
   };
 

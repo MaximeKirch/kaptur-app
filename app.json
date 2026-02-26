@@ -18,6 +18,10 @@
       "newArchitectureEnabled": true,
       "bundleIdentifier": "com.maximekirch.relevo",
       "jsEngine": "hermes",
+      "buildNumber": "1",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Relevo a besoin de votre micro pour enregistrer vos notes vocales à analyser.",
         "ITSAppUsesNonExemptEncryption": false,

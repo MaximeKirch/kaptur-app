@@ -11,7 +11,6 @@ import * as Notifications from "expo-notifications";
 import { useUserStore } from "../../src/store/userStore";
 import { useCreateJob } from "../../src/hooks/useCreateJob";
 import { useAudioRecorderHook as useAudioRecorder } from "../../src/hooks/useAudioRecorder";
-import { checkIfAudioIsEmpty } from "../../src/utils/audioUtils";
 
 // UI Components
 import { CreditBadge } from "../../src/components/ui/CreditBadge";
@@ -30,8 +29,7 @@ export default function HomeScreen() {
   const setCredits = useUserStore((state) => state.setCredits);
   const credits = useUserStore((state) => state.credits);
 
-  // État local pour tracker si l'audio semble vide/silencieux
-  const [isAudioEmpty, setIsAudioEmpty] = useState(false);
+  // (Supprimé: vérification audio vide - échantillonnage pas assez précis)
 
   // Custom Hooks (Logic Layer)
   const {
@@ -51,25 +49,7 @@ export default function HomeScreen() {
   // Plus de calcul savant. 1 = 1.
   const hasEnoughCredits = credits >= FIXED_COST;
 
-  // Vérifier si l'audio est vide quand on passe en mode review
-  // Seulement pour les enregistrements, pas pour les fichiers importés
-  useEffect(() => {
-    const checkAudio = async () => {
-      if (
-        status === "review" &&
-        audioUri &&
-        duration > 0 &&
-        audioSource === "recorded"
-      ) {
-        const isEmpty = await checkIfAudioIsEmpty(audioUri, duration);
-        setIsAudioEmpty(isEmpty);
-      } else {
-        setIsAudioEmpty(false);
-      }
-    };
-
-    checkAudio();
-  }, [status, audioUri, duration, audioSource]);
+  // (Supprimé: vérification audio vide - échantillonnage pas assez précis)
 
   // --- LOGIQUE MÉTIER ---
 
@@ -79,7 +59,7 @@ export default function HomeScreen() {
     // Ne vérifier que les enregistrements faits en direct, pas les fichiers importés
     // (l'utilisateur sait déjà ce qu'il importe depuis son téléphone)
     if (audioSource === "recorded") {
-      // Vérification 1 : Durée minimale pour éviter les enregistrements très courts
+      // Vérification : Durée minimale pour éviter les enregistrements très courts
       if (duration < MIN_DURATION) {
         Alert.alert(
           "Enregistrement très court",
@@ -87,26 +67,6 @@ export default function HomeScreen() {
           [
             {
               text: "Vérifier l'audio",
-              style: "cancel",
-            },
-            {
-              text: "Analyser quand même",
-              onPress: () => proceedWithAnalysis(),
-            },
-          ],
-        );
-        return;
-      }
-
-      // Vérification 2 : Audio vide/silencieux (même si long)
-      const isEmpty = await checkIfAudioIsEmpty(audioUri, duration);
-      if (isEmpty) {
-        Alert.alert(
-          "Audio vide ou silencieux",
-          "L'enregistrement semble ne contenir aucun son exploitable. Cela peut arriver si le microphone était coupé ou défaillant.\n\nVous pouvez réécouter l'audio pour vérifier avant de l'analyser.\n\nVous allez utiliser 1 crédit si vous continuez.",
-          [
-            {
-              text: "Réécouter",
               style: "cancel",
             },
             {
@@ -241,7 +201,7 @@ export default function HomeScreen() {
               isShortDuration={
                 audioSource === "recorded" && duration < MIN_DURATION
               }
-              isAudioEmpty={isAudioEmpty}
+              isAudioEmpty={false}
               onReset={reset}
               onAnalyze={handleAnalyze}
               onPaywall={() => router.push("/paywall")}

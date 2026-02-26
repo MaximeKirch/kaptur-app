@@ -10,14 +10,55 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRevenueCat } from "@/src/hooks/useRevenuecat";
 import { useMemo } from "react";
 
+// ⚠️ TEMPORAIRE: Flag pour screenshots App Store
+const USE_TEST_PRICES = false;
+
 export default function PaywallScreen() {
   const router = useRouter();
   const { packages, isPurchasing, buyPackage } = useRevenueCat();
 
+  // Données de test pour screenshots
+  const testPackages = useMemo(
+    () => [
+      {
+        identifier: "relevo_05_credits",
+        product: {
+          title: "5 crédits",
+          description: "Parfait pour commencer",
+          price: 4.99,
+          priceString: "4,99 €",
+          currencyCode: "EUR",
+        },
+      },
+      {
+        identifier: "relevo_20_credits",
+        product: {
+          title: "20 crédits",
+          description: "L'offre populaire",
+          price: 14.99,
+          priceString: "14,99 €",
+          currencyCode: "EUR",
+        },
+      },
+      {
+        identifier: "relevo_50_credits",
+        product: {
+          title: "50 crédits",
+          description: "Le meilleur rapport qualité/prix",
+          price: 29.99,
+          priceString: "29,99 €",
+          currencyCode: "EUR",
+        },
+      },
+    ],
+    [],
+  );
+
   // 1. On trie les paquets par prix croissant
   const sortedPackages = useMemo(() => {
-    return [...packages].sort((a, b) => a.product.price - b.product.price);
-  }, [packages]);
+    const packagesToUse = USE_TEST_PRICES ? testPackages : packages;
+    return [...packagesToUse].sort((a, b) => a.product.price - b.product.price);
+  }, [packages, testPackages]);
 
   // 2. Helper pour le style et les badges marketing
   const getBadgeInfo = (identifier: string) => {
