@@ -18,6 +18,12 @@
         "simulator": false
       }
     },
+    "simulator": {
+      "extends": "production",
+      "ios": {
+        "simulator": true
+      }
+    },
     "production": {
       "autoIncrement": true,
       "env": {

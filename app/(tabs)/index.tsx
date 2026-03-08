@@ -9,6 +9,7 @@ import * as Notifications from "expo-notifications";
 
 // Stores & Hooks
 import { useUserStore } from "../../src/store/userStore";
+import { useConsentStore } from "../../src/store/consentStore";
 import { useCreateJob } from "../../src/hooks/useCreateJob";
 import { useAudioRecorderHook as useAudioRecorder } from "../../src/hooks/useAudioRecorder";
 
@@ -28,6 +29,9 @@ export default function HomeScreen() {
   // State Global
   const setCredits = useUserStore((state) => state.setCredits);
   const credits = useUserStore((state) => state.credits);
+
+  // Consent State
+  const { status: consentStatus, loadConsentStatus } = useConsentStore();
 
   // (Supprimé: vérification audio vide - échantillonnage pas assez précis)
 
@@ -51,7 +55,34 @@ export default function HomeScreen() {
 
   // (Supprimé: vérification audio vide - échantillonnage pas assez précis)
 
+  // Charger le statut du consentement au montage
+  useEffect(() => {
+    loadConsentStatus();
+  }, []);
+
   // --- LOGIQUE MÉTIER ---
+
+  const handleStartRecording = () => {
+    // Vérifier le consentement AVANT de démarrer l'enregistrement
+    if (consentStatus !== "granted") {
+      router.push("/data-consent");
+      return;
+    }
+
+    // Si consentement OK, démarrer l'enregistrement
+    startRecording();
+  };
+
+  const handleImportFile = () => {
+    // Vérifier le consentement AVANT d'importer un fichier
+    if (consentStatus !== "granted") {
+      router.push("/data-consent");
+      return;
+    }
+
+    // Si consentement OK, importer le fichier
+    importFile();
+  };
 
   const handleAnalyze = async () => {
     if (!audioUri) return;
@@ -180,7 +211,7 @@ export default function HomeScreen() {
         {/* CONTENU PRINCIPAL */}
         <View className="flex-1 justify-center items-center">
           {status === "idle" && (
-            <IdleView onRecord={startRecording} onImport={importFile} />
+            <IdleView onRecord={handleStartRecording} onImport={handleImportFile} />
           )}
 
           {status === "recording" && (

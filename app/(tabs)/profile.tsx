@@ -10,8 +10,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useEffect } from "react";
 import { useAuthStore } from "../../src/store/authStore";
 import { useUserStore } from "../../src/store/userStore";
+import { useConsentStore } from "../../src/store/consentStore";
 import { api } from "../../src/services/api";
 
 // Composant pour une ligne de menu
@@ -55,6 +57,12 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { logout, user } = useAuthStore();
   const credits = useUserStore((state) => state.credits);
+  const { status: consentStatus, loadConsentStatus, revokeConsent } = useConsentStore();
+
+  // Charger le consentement au montage
+  useEffect(() => {
+    loadConsentStatus();
+  }, []);
 
   // --- ACTIONS ---
 
@@ -98,10 +106,52 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleManageConsent = () => {
+    if (consentStatus === "granted") {
+      Alert.alert(
+        "Révoquer le consentement",
+        "Si vous révoquez votre consentement, vous ne pourrez plus créer de nouveaux rapports.\n\nVos rapports existants ne seront pas supprimés.",
+        [
+          { text: "Annuler", style: "cancel" },
+          {
+            text: "Révoquer",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await revokeConsent();
+                Alert.alert(
+                  "Consentement révoqué",
+                  "Vous ne pourrez plus créer de rapports tant que vous n'aurez pas accordé à nouveau votre consentement.",
+                );
+              } catch (error) {
+                Alert.alert("Erreur", "Impossible de révoquer le consentement.");
+              }
+            },
+          },
+        ],
+      );
+    } else {
+      router.push("/data-consent");
+    }
+  };
+
   const openLink = (url: string) => {
     Linking.openURL(url).catch(() =>
       Alert.alert("Erreur", "Impossible d'ouvrir le lien"),
     );
+  };
+
+  const getConsentStatusText = () => {
+    switch (consentStatus) {
+      case "granted":
+        return "Accordé ✓";
+      case "denied":
+        return "Révoqué";
+      case "pending":
+        return "En attente";
+      default:
+        return "";
+    }
   };
 
   return (
@@ -158,6 +208,19 @@ export default function ProfileScreen() {
             icon="mail-outline"
             label="Contacter le support"
             onPress={() => openLink("mailto:maxime.kirch@gmail.com")}
+          />
+        </View>
+
+        {/* --- PROTECTION DES DONNÉES --- */}
+        <Text className="text-zinc-500 text-xs uppercase font-bold mb-2 ml-2">
+          Protection des données
+        </Text>
+        <View className="bg-surface rounded-xl overflow-hidden mb-8 border border-zinc-800">
+          <MenuItem
+            icon="cloud-upload-outline"
+            label="Consentement de traitement"
+            value={getConsentStatusText()}
+            onPress={handleManageConsent}
           />
         </View>
 
