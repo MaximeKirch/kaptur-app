@@ -5,6 +5,8 @@
     "scheme": "relevo",
     "version": "1.0.0",
     "orientation": "portrait",
+    "privacy": "public",
+    "primaryColor": "#3b82f6",
     "icon": "./assets/images/relevo_icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#000000",
@@ -26,6 +28,9 @@
         "NSMicrophoneUsageDescription": "Relevo a besoin de votre micro pour enregistrer vos notes vocales à analyser.",
         "ITSAppUsesNonExemptEncryption": false,
         "UIUserInterfaceStyle": "Dark"
+      },
+      "entitlements": {
+        "aps-environment": "development"
       }
     },
     "android": {
@@ -42,6 +47,14 @@
         "expo-audio",
         {
           "microphonePermission": "Relevo a besoin de votre micro pour enregistrer vos notes vocales à analyser."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/relevo_icon.png",
+          "color": "#ffffff",
+          "sounds": []
         }
       ],
       "expo-asset",

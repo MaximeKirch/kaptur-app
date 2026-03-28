@@ -11,7 +11,7 @@ import { useRevenueCat } from "@/src/hooks/useRevenuecat";
 import { useMemo } from "react";
 
 // ⚠️ TEMPORAIRE: Flag pour screenshots App Store
-const USE_TEST_PRICES = true;
+const USE_TEST_PRICES = false;
 
 export default function PaywallScreen() {
   const router = useRouter();

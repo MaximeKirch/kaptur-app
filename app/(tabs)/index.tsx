@@ -153,13 +153,6 @@ export default function HomeScreen() {
         // Vérifier les permissions de notification
         const { status } = await Notifications.getPermissionsAsync();
 
-        // Simple alert sans vérifier les permissions
-        Alert.alert(
-          "Analyse en cours",
-          "Votre enregistrement est en cours d'analyse. Consultez l'onglet Historique pour suivre son statut.",
-          [{ text: "OK", onPress: () => router.push("/(tabs)/history") }],
-        );
-
         if (status === "granted") {
           // L'utilisateur accepte les notifications
           Alert.alert(
@@ -211,7 +204,10 @@ export default function HomeScreen() {
         {/* CONTENU PRINCIPAL */}
         <View className="flex-1 justify-center items-center">
           {status === "idle" && (
-            <IdleView onRecord={handleStartRecording} onImport={handleImportFile} />
+            <IdleView
+              onRecord={handleStartRecording}
+              onImport={handleImportFile}
+            />
           )}
 
           {status === "recording" && (

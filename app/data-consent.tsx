@@ -20,7 +20,8 @@ export default function DataConsentScreen() {
     try {
       setIsLoading(true);
       await grantConsent();
-      router.back();
+      // Rediriger vers l'app principale après acceptation
+      router.replace("/(tabs)");
     } catch (error) {
       console.error("Erreur lors de l'acceptation du consentement:", error);
     } finally {
@@ -29,7 +30,9 @@ export default function DataConsentScreen() {
   };
 
   const handleDecline = () => {
-    router.back();
+    // Si l'utilisateur refuse, on le laisse explorer l'app
+    // mais il ne pourra pas créer de rapports
+    router.replace("/(tabs)");
   };
 
   return (
@@ -96,14 +99,14 @@ export default function DataConsentScreen() {
             </Text>
           </View>
           <Text className="text-zinc-400 text-sm leading-6">
-            • <Text className="text-white font-semibold">OpenAI</Text> (Whisper)
-            : transcription et analyse{"\n"}•{" "}
+            • <Text className="text-white font-semibold">OpenAI Whisper</Text>:
+            transcription audio vers texte{"\n"}•{" "}
+            <Text className="text-white font-semibold">Google Gemini</Text> :
+            formatage et structuration du compte rendu{"\n"}•{" "}
             <Text className="text-white font-semibold">
-              Amazon Web Services
+              Amazon Web Services S3
             </Text>{" "}
-            : stockage temporaire{"\n"}• Données supprimées après traitement
-            <Text className="text-white font-semibold">Google Cloud</Text> :
-            formattage et traitement texte{"\n"}
+            : stockage temporaire (supprimé après traitement){"\n"}
           </Text>
         </View>
 
@@ -127,9 +130,9 @@ export default function DataConsentScreen() {
         {/* Disclaimer */}
         <View className="bg-yellow-500/5 border border-yellow-500/20 p-4 rounded-xl mb-8">
           <Text className="text-yellow-200 text-xs leading-5">
-            ⚠️ Sans votre consentement, vous ne pourrez pas créer de rapports.
-            Vous pouvez révoquer cette autorisation à tout moment depuis votre
-            profil.
+            ⚠️ Sans votre consentement, vous pourrez explorer l'app mais ne
+            pourrez pas créer de nouveaux rapports. Vous pouvez révoquer cette
+            autorisation à tout moment depuis votre profil.
           </Text>
         </View>
 
@@ -165,7 +168,7 @@ export default function DataConsentScreen() {
 
         <Text className="text-zinc-600 text-xs text-center mb-8">
           En acceptant, vous consentez au traitement de vos enregistrements par
-          OpenAI, Amazon Web Services et Google Cloud conformément à notre{" "}
+          OpenAI Whisper, Google Gemini et AWS S3 conformément à notre{" "}
           <Text className="text-primary">politique de confidentialité</Text>.
         </Text>
       </ScrollView>

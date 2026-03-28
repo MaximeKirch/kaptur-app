@@ -109,49 +109,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  // checkAuth: async () => {
-  //   try {
-  //     // 1. Lecture ultra-sécurisée du SecureStore
-  //     const token = await SecureStore.getItemAsync(TOKEN_KEY).catch(() => null);
-  //     const refreshToken = await SecureStore.getItemAsync(
-  //       REFRESH_TOKEN_KEY,
-  //     ).catch(() => null);
-
-  //     if (!token || !refreshToken) {
-  //       console.log("[CheckAuth] Pas de tokens -> Déconnecté");
-  //       set({ isAuthenticated: false, isReady: true } as any); // On s'assure de libérer le loader
-  //       return;
-  //     }
-
-  //     // 2. On met à jour l'état local immédiatement pour débloquer l'UI
-  //     set({ token, refreshToken, isAuthenticated: true });
-
-  //     // 3. On tente l'appel API en arrière-plan sans bloquer le boot
-  //     try {
-  //       const res = await api.get("/auth/me");
-  //       set({ user: res.data });
-  //       useUserStore.getState().setCredits(res.data.credits);
-  //     } catch (err: any) {
-  //       // Si 401, on tente le refresh, mais on ne crash pas l'app si ça échoue
-  //       if (err.response?.status === 401) {
-  //         const success = await get().refreshAccessToken();
-  //         if (success) {
-  //           const retryRes = await api.get("/auth/me").catch(() => null);
-  //           if (retryRes) {
-  //             set({ user: retryRes.data });
-  //             useUserStore.getState().setCredits(retryRes.data.credits);
-  //           }
-  //         }
-  //       }
-  //     }
-  //   } catch (criticalError) {
-  //     // Crash silencieux pour sauver le démarrage
-  //     console.error("CRITICAL AUTH ERROR AT BOOT:", criticalError);
-  //     set({ isAuthenticated: false });
-  //   }
-  // },
-  //
-  // src/store/authStore.ts
   // src/store/authStore.ts
   checkAuth: async () => {
     try {

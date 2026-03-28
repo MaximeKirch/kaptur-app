@@ -2,10 +2,18 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { View, ActivityIndicator, Platform } from "react-native";
+import { View, Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+  runOnJS,
+} from "react-native-reanimated";
 import { useAuthStore } from "../src/store/authStore";
 import { useUserStore } from "../src/store/userStore";
+import { SplashScreen } from "../src/components/SplashScreen";
 import "../global.css";
 // TODO: Réactiver quand compatible avec new arch
 // import * as Sentry from "@sentry/react-native";
@@ -86,6 +94,11 @@ function RootLayoutNav() {
   const segments = useSegments();
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+
+  // Animation values
+  const splashOpacity = useSharedValue(1);
+  const contentOpacity = useSharedValue(0);
 
   // Définir le contexte utilisateur dans Sentry
   // useEffect(() => {
@@ -116,47 +129,51 @@ function RootLayoutNav() {
 
     const init = async () => {
       try {
-        // Breadcrumb: Début de l'initialisation
-        // Sentry.addBreadcrumb({
-        //   category: "app.lifecycle",
-        //   message: "App initialization started",
-        //   level: "info",
-        // });
-
-        // Charger auth, onboarding et crédits en parallèle (avec timeout de sécurité)
+        // Charger auth, onboarding et crédits en parallèle
         await Promise.all([
           checkAuth().catch((e) => {
             console.log("Auth check failed:", e);
-            // Sentry.captureException(e, {
-            //   tags: { context: "auth_check" },
-            //   level: "warning",
-            // });
           }),
           checkOnboardingStatus().catch((e) => {
             console.log("Onboarding check failed:", e);
-            // Sentry.captureException(e, {
-            //   tags: { context: "onboarding_check" },
-            //   level: "warning",
-            // });
           }),
         ]);
 
         if (!isMounted) return;
 
-        // Tout est chargé, on peut afficher l'UI
+        // Tout est chargé
         setIsReady(true);
+
+        // Déclencher l'animation de transition après un court délai
+        setTimeout(() => {
+          if (!isMounted) return;
+
+          // Fade out splash, fade in content
+          splashOpacity.value = withTiming(
+            0,
+            {
+              duration: 400,
+              easing: Easing.out(Easing.ease),
+            },
+            (finished) => {
+              if (finished) {
+                runOnJS(setShowSplash)(false);
+              }
+            }
+          );
+
+          contentOpacity.value = withTiming(1, {
+            duration: 400,
+            easing: Easing.out(Easing.ease),
+          });
+        }, 800); // Petit délai pour que l'utilisateur voie le splash
       } catch (error) {
         console.error("Critical init error:", error);
-
-        // Capturer les erreurs critiques d'initialisation
-        // Sentry.captureException(error, {
-        //   level: "fatal",
-        //   tags: { context: "app_init" },
-        // });
 
         // On libère quand même l'UI pour éviter un écran blanc infini
         if (isMounted) {
           setIsReady(true);
+          setShowSplash(false);
         }
       }
     };
@@ -205,37 +222,71 @@ function RootLayoutNav() {
     // L'utilisateur est libre de naviguer tant qu'il a des crédits.
   }, [isAuthenticated, hasCompletedOnboarding, segments, isReady]);
 
-  // Loader pendant l'initialisation (très court)
-  if (!isReady) {
-    return (
-      <View className="flex-1 justify-center items-center bg-background">
-        <ActivityIndicator size="large" color="#3b82f6" />
-      </View>
-    );
-  }
+  // Animated styles
+  const splashAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: splashOpacity.value,
+    };
+  });
+
+  const contentAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: contentOpacity.value,
+    };
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: "#09090b" }}>
       <StatusBar style="light" />
-      {/* Texte blanc pour fond noir */}
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          // Définit le fond par défaut pour toutes les pages (évite les flashs blancs)
-          contentStyle: { backgroundColor: "#09090b" },
-        }}
-      >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="job/[id]" />
-        <Stack.Screen
-          name="paywall"
-          options={{
-            presentation: "modal",
-          }}
-        />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="onboarding" />
-      </Stack>
+
+      {/* Splash Screen avec animation */}
+      {showSplash && (
+        <Animated.View
+          style={[
+            {
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 1000,
+            },
+            splashAnimatedStyle,
+          ]}
+        >
+          <SplashScreen />
+        </Animated.View>
+      )}
+
+      {/* Contenu principal avec fade in */}
+      {isReady && (
+        <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: "#09090b" },
+              animation: "fade",
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="job/[id]" />
+            <Stack.Screen
+              name="paywall"
+              options={{
+                presentation: "modal",
+              }}
+            />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="onboarding" />
+            <Stack.Screen
+              name="data-consent"
+              options={{
+                presentation: "modal",
+              }}
+            />
+          </Stack>
+        </Animated.View>
+      )}
     </View>
   );
 }

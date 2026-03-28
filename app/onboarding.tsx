@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 import { useRouter } from "expo-router";
 import { OnboardingSlide } from "../src/components/OnboardingSlide";
 import { useUserStore } from "../src/store/userStore";
+import { useConsentStore } from "../src/store/consentStore";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -50,6 +51,12 @@ export default function OnboardingScreen() {
   const flatListRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const { markOnboardingComplete } = useUserStore();
+  const { status: consentStatus, loadConsentStatus } = useConsentStore();
+
+  // Charger le statut du consentement au montage
+  useEffect(() => {
+    loadConsentStatus();
+  }, []);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
@@ -74,7 +81,15 @@ export default function OnboardingScreen() {
 
   const handleComplete = async () => {
     await markOnboardingComplete();
-    router.replace("/(tabs)");
+
+    // Vérifier si le consentement a été accordé
+    if (consentStatus !== "granted") {
+      // Rediriger vers l'écran de consentement
+      router.replace("/data-consent");
+    } else {
+      // Consentement déjà accordé, accès à l'app
+      router.replace("/(tabs)");
+    }
   };
 
   const renderSlide = ({ item }: { item: (typeof SLIDES)[0] }) => (
