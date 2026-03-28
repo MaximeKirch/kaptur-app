@@ -15,7 +15,8 @@ const USE_TEST_PRICES = false;
 
 export default function PaywallScreen() {
   const router = useRouter();
-  const { packages, isPurchasing, buyPackage } = useRevenueCat();
+  const { packages, isPurchasing, isReady, error, buyPackage } =
+    useRevenueCat();
 
   // Données de test pour screenshots
   const testPackages = useMemo(
@@ -129,12 +130,29 @@ export default function PaywallScreen() {
 
         {/* Liste des offres */}
         <View className="gap-4 flex-1">
-          {sortedPackages.length === 0 ? (
+          {!isReady ? (
             <View className="py-10 items-center">
-              <ActivityIndicator size="large" color="#3b82f6" />
-              <Text className="text-zinc-500 text-center mt-4">
-                Chargement des offres...
-              </Text>
+              {error ? (
+                <>
+                  <Ionicons name="warning-outline" size={48} color="#ef4444" />
+                  <Text className="text-red-500 text-center mt-4 font-semibold">
+                    {error}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => router.back()}
+                    className="mt-4 px-6 py-3 bg-zinc-800 rounded-xl"
+                  >
+                    <Text className="text-white font-semibold">Retour</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <ActivityIndicator size="large" color="#3b82f6" />
+                  <Text className="text-zinc-500 text-center mt-4">
+                    Préparation des offres...
+                  </Text>
+                </>
+              )}
             </View>
           ) : (
             sortedPackages.map((pack) => {

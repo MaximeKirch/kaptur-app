@@ -37,14 +37,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     if (user?.id) {
+      // Lier RevenueCat à l'utilisateur (ignore si pas encore configuré)
       try {
-        const isConfigured = await Purchases.isConfigured();
-        if (isConfigured) {
-          await Purchases.logIn(user.id.toString());
-          console.log("🔗 RevenueCat lié à l'utilisateur :", user.id);
-        }
+        await Purchases.logIn(user.id.toString());
       } catch (e) {
-        console.error("Erreur liaison RevenueCat", e);
+        // RevenueCat pas encore configuré, sera lié au premier achat
+        console.log("⏳ RevenueCat pas encore configuré, liaison différée");
       }
     }
   },
@@ -63,12 +61,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     useUserStore.getState().setCredits(0);
 
     try {
-      const isConfigured = await Purchases.isConfigured();
-      if (isConfigured) {
-        await Purchases.logOut();
-      }
+      await Purchases.logOut();
+      console.log("🔓 RevenueCat déconnecté");
     } catch (e) {
-      console.error("Erreur déconnexion RevenueCat", e);
+      // RevenueCat pas configuré ou déjà déconnecté
+      console.log("⏳ RevenueCat pas configuré");
     }
   },
 
@@ -132,11 +129,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Puis mettre à jour depuis l'API en background (sans bloquer)
         api
           .get("/auth/me")
-          .then((res) => {
+          .then(async (res) => {
             set({ user: res.data });
             // Mettre à jour les crédits depuis l'API (plus récent)
             if (res.data.credits !== undefined) {
               useUserStore.getState().setCredits(res.data.credits);
+            }
+
+            // Lier RevenueCat à l'utilisateur (important pour les users déjà connectés)
+            if (res.data.id) {
+              try {
+                await Purchases.logIn(res.data.id.toString());
+                console.log(
+                  "🔗 RevenueCat lié à l'utilisateur (checkAuth):",
+                  res.data.id,
+                );
+              } catch (e) {
+                console.log("⏳ RevenueCat pas encore configuré (checkAuth)");
+              }
             }
           })
           .catch(() => null);

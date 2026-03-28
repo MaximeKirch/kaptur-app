@@ -2,18 +2,24 @@ import { useEffect, useState } from "react";
 import { Alert, Platform } from "react-native";
 import Purchases, { LOG_LEVEL, PurchasesPackage } from "react-native-purchases";
 import { useUserStore } from "../store/userStore";
+import { useAuthStore } from "../store/authStore";
 import { api } from "../services/api";
 import Constants from "expo-constants";
 
 export const useRevenueCat = () => {
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const setCredits = useUserStore((state) => state.setCredits);
 
   useEffect(() => {
-    const initRevenueCat = async () => {
+    const initRevenueCatAndLinkUser = async () => {
       try {
-        // Configuration RevenueCat
+        setIsReady(false);
+        setError(null);
+
+        // 1. Configurer RevenueCat
         Purchases.setLogLevel(LOG_LEVEL.DEBUG);
 
         const apiKey =
@@ -25,30 +31,54 @@ export const useRevenueCat = () => {
 
         if (!apiKey) {
           console.warn("⚠️ RevenueCat API key not configured");
+          setError("Configuration manquante");
           return;
         }
 
         Purchases.configure({ apiKey });
         console.log("✅ RevenueCat initialized");
 
-        // Charger les packages disponibles
+        // 2. Récupérer l'utilisateur depuis le store
+        const user = useAuthStore.getState().user;
+
+        if (!user?.id) {
+          // Attendre un peu que l'API /auth/me réponde
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          const retryUser = useAuthStore.getState().user;
+          if (!retryUser?.id) {
+            setError("Impossible de charger votre compte");
+            return;
+          }
+        }
+
+        const finalUser = useAuthStore.getState().user;
+
+        // 3. Lier l'utilisateur à RevenueCat
+        console.log("🔗 Liaison de l'utilisateur à RevenueCat...");
+        const customerInfo = await Purchases.logIn(finalUser!.id.toString());
+
         const offerings = await Purchases.getOfferings();
         if (
           offerings.current !== null &&
           offerings.current.availablePackages.length !== 0
         ) {
           setPackages(offerings.current.availablePackages);
-          console.log(
-            "📦 Packages loaded:",
-            offerings.current.availablePackages.length,
-          );
+        } else {
+          console.warn("⚠️ Aucun package disponible");
+          setError("Aucun package disponible");
+          return;
         }
-      } catch (error) {
-        console.error("❌ RevenueCat initialization error:", error);
+
+        // 5. Tout est prêt !
+        console.log("🎉 RevenueCat prêt !");
+        setIsReady(true);
+      } catch (error: any) {
+        console.error("❌ Erreur d'initialisation RevenueCat:", error);
+        setError(error.message || "Erreur d'initialisation");
       }
     };
 
-    initRevenueCat();
+    initRevenueCatAndLinkUser();
   }, []);
 
   /**
@@ -59,15 +89,13 @@ export const useRevenueCat = () => {
    */
   const fetchUpdatedCredits = async (
     initialCredits: number,
-    maxRetries: number = 3
+    maxRetries: number = 3,
   ): Promise<boolean> => {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         // Exponential backoff: 1s, 2s, 4s
         const delay = Math.pow(2, attempt) * 1000;
         await new Promise((resolve) => setTimeout(resolve, delay));
-
-        console.log(`🔄 Fetching credits (attempt ${attempt + 1}/${maxRetries})...`);
 
         // Récupérer les crédits depuis le backend
         const response = await api.get("/auth/me");
@@ -84,7 +112,10 @@ export const useRevenueCat = () => {
 
         console.log(`⏳ Credits not updated yet, retrying...`);
       } catch (error) {
-        console.error(`❌ Error fetching credits (attempt ${attempt + 1}):`, error);
+        console.error(
+          `❌ Error fetching credits (attempt ${attempt + 1}):`,
+          error,
+        );
       }
     }
 
@@ -107,22 +138,12 @@ export const useRevenueCat = () => {
 
       // Sauvegarder les crédits actuels pour détecter la mise à jour
       const currentCredits = useUserStore.getState().credits;
-
-      console.log("🛒 Starting purchase...");
       const purchaseResult = await Purchases.purchasePackage(pack);
 
       console.log("✅ Purchase completed:", {
         productId: pack.product.identifier,
         transactionId: purchaseResult.customerInfo.originalAppUserId,
       });
-
-      // Afficher un message de validation en cours
-      Alert.alert(
-        "Achat validé",
-        "Validation de votre achat en cours...",
-        [{ text: "OK" }],
-        { cancelable: false }
-      );
 
       // Attendre que le webhook RevenueCat mette à jour le backend
       // puis récupérer les crédits mis à jour avec retry
@@ -155,5 +176,5 @@ export const useRevenueCat = () => {
     }
   };
 
-  return { packages, isPurchasing, buyPackage };
+  return { packages, isPurchasing, isReady, error, buyPackage };
 };
