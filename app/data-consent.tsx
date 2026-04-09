@@ -5,21 +5,25 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { useConsentStore } from "../src/store/consentStore";
+import { useUserStore } from "../src/store/userStore";
 
 export default function DataConsentScreen() {
   const router = useRouter();
   const { grantConsent } = useConsentStore();
+  const { markOnboardingComplete } = useUserStore();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAccept = async () => {
     try {
       setIsLoading(true);
       await grantConsent();
+      await markOnboardingComplete();
       // Rediriger vers l'app principale après acceptation
       router.replace("/(tabs)");
     } catch (error) {
@@ -30,9 +34,12 @@ export default function DataConsentScreen() {
   };
 
   const handleDecline = () => {
-    // Si l'utilisateur refuse, on le laisse explorer l'app
-    // mais il ne pourra pas créer de rapports
-    router.replace("/(tabs)");
+    // Rediriger vers l'écran d'explication si l'utilisateur refuse
+    router.replace("/consent-required");
+  };
+
+  const handleOpenPrivacyPolicy = () => {
+    Linking.openURL("https://getrelevo.com/privacy");
   };
 
   return (
@@ -42,17 +49,10 @@ export default function DataConsentScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between mb-8">
-          <TouchableOpacity
-            onPress={handleDecline}
-            className="w-10 h-10 items-center justify-center"
-          >
-            <Ionicons name="close" size={24} color="#71717a" />
-          </TouchableOpacity>
+        <View className="items-center mb-8 mt-4">
           <Text className="text-lg font-semibold text-white">
             Protection des données
           </Text>
-          <View className="w-10" />
         </View>
 
         {/* Icon */}
@@ -166,11 +166,16 @@ export default function DataConsentScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text className="text-zinc-600 text-xs text-center mb-8">
+        <Text className="text-zinc-600 text-xs text-center mb-4">
           En acceptant, vous consentez au traitement de vos enregistrements par
-          OpenAI Whisper, Google Gemini et AWS S3 conformément à notre{" "}
-          <Text className="text-primary">politique de confidentialité</Text>.
+          OpenAI Whisper, Google Gemini et AWS S3 conformément à notre politique de confidentialité.
         </Text>
+
+        <TouchableOpacity onPress={handleOpenPrivacyPolicy} className="mb-8">
+          <Text className="text-primary text-sm text-center underline">
+            Consulter notre politique de confidentialité
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

@@ -9,7 +9,6 @@ interface UserState {
   loadCredits: () => Promise<void>;
   markOnboardingComplete: () => Promise<void>;
   checkOnboardingStatus: () => Promise<void>;
-  // Tu ajouteras ici d'autres infos user (email, isPremium, etc.)
 }
 
 const ONBOARDING_KEY = "relevo_onboarding_completed";
@@ -23,7 +22,7 @@ export const useUserStore = create<UserState>((set) => ({
     set({ credits: count });
     // Persister en background (non-bloquant)
     AsyncStorage.setItem(CREDITS_KEY, count.toString()).catch((e) =>
-      console.error("Erreur sauvegarde crédits:", e)
+      console.error("Erreur sauvegarde crédits:", e),
     );
   },
 
@@ -32,7 +31,9 @@ export const useUserStore = create<UserState>((set) => ({
     set((state) => {
       const newCredits = Math.max(0, state.credits - 1);
       // Persister en background
-      AsyncStorage.setItem(CREDITS_KEY, newCredits.toString()).catch(() => null);
+      AsyncStorage.setItem(CREDITS_KEY, newCredits.toString()).catch(
+        () => null,
+      );
       return { credits: newCredits };
     }),
 

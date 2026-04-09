@@ -18,6 +18,7 @@ import { CreditBadge } from "../../src/components/ui/CreditBadge";
 import { IdleView } from "../../src/components/recorder/IdleView";
 import { RecordingView } from "../../src/components/recorder/RecordingView";
 import { ReviewView } from "../../src/components/recorder/ReviewView";
+import { ConsentRequiredView } from "../../src/components/recorder/ConsentRequiredView";
 
 const FIXED_COST: number = 1; // Stratégie Flat Fee
 const MIN_DURATION: number = 3; // Durée minimale en secondes pour éviter les enregistrements vides
@@ -203,7 +204,13 @@ export default function HomeScreen() {
 
         {/* CONTENU PRINCIPAL */}
         <View className="flex-1 justify-center items-center">
-          {status === "idle" && (
+          {/* Afficher l'empty state si pas de consentement */}
+          {consentStatus !== "granted" && status === "idle" && (
+            <ConsentRequiredView />
+          )}
+
+          {/* Afficher l'UI normale si consentement accordé */}
+          {consentStatus === "granted" && status === "idle" && (
             <IdleView
               onRecord={handleStartRecording}
               onImport={handleImportFile}

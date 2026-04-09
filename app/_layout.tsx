@@ -278,12 +278,8 @@ function RootLayoutNav() {
             />
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="onboarding" />
-            <Stack.Screen
-              name="data-consent"
-              options={{
-                presentation: "modal",
-              }}
-            />
+            <Stack.Screen name="data-consent" />
+            <Stack.Screen name="consent-required" />
           </Stack>
         </Animated.View>
       )}

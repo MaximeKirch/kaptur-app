@@ -28,13 +28,14 @@ export const useConsentStore = create<ConsentState>((set, get) => ({
 
       // 1. Vérifier AsyncStorage en premier (cache local)
       const localConsent = await AsyncStorage.getItem(CONSENT_KEY);
+      console.log(localConsent);
 
       if (localConsent) {
         const parsed = JSON.parse(localConsent);
         set({
           status: parsed.status,
           timestamp: parsed.timestamp,
-          isLoading: false
+          isLoading: false,
         });
         return;
       }
@@ -48,14 +49,17 @@ export const useConsentStore = create<ConsentState>((set, get) => ({
           // Synchroniser avec AsyncStorage
           await AsyncStorage.setItem(
             CONSENT_KEY,
-            JSON.stringify({ status, timestamp })
+            JSON.stringify({ status, timestamp }),
           );
           set({ status, timestamp, isLoading: false });
           return;
         }
       } catch (error) {
         // Si erreur backend (offline, etc.), on reste en pending
-        console.log("Impossible de récupérer le consentement depuis le backend");
+        console.log(
+          "Impossible de récupérer le consentement depuis le backend",
+          error,
+        );
       }
 
       // 3. Aucun consentement trouvé
@@ -79,7 +83,10 @@ export const useConsentStore = create<ConsentState>((set, get) => ({
       try {
         await api.post("/user/data-consent", consentData);
       } catch (error) {
-        console.error("Erreur lors de la sauvegarde du consentement en BDD:", error);
+        console.error(
+          "Erreur lors de la sauvegarde du consentement en BDD:",
+          error,
+        );
         // On ne bloque pas l'utilisateur même si le backend échoue
       }
     } catch (error) {
@@ -101,7 +108,10 @@ export const useConsentStore = create<ConsentState>((set, get) => ({
       try {
         await api.post("/user/data-consent", consentData);
       } catch (error) {
-        console.error("Erreur lors de la révocation du consentement en BDD:", error);
+        console.error(
+          "Erreur lors de la révocation du consentement en BDD:",
+          error,
+        );
       }
     } catch (error) {
       console.error("Erreur lors de la révocation du consentement:", error);

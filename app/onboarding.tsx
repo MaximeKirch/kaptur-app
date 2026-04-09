@@ -80,15 +80,16 @@ export default function OnboardingScreen() {
   };
 
   const handleComplete = async () => {
-    await markOnboardingComplete();
+    // NE PAS marquer l'onboarding comme complété ici
+    // Il sera complété après l'acceptation ou le refus du consentement
 
-    // Vérifier si le consentement a été accordé
-    if (consentStatus !== "granted") {
-      // Rediriger vers l'écran de consentement
-      router.replace("/data-consent");
-    } else {
-      // Consentement déjà accordé, accès à l'app
+    // Vérifier si le consentement a déjà été accordé (cas d'un retour)
+    if (consentStatus === "granted") {
+      await markOnboardingComplete();
       router.replace("/(tabs)");
+    } else {
+      // Rediriger vers l'écran de consentement (obligatoire)
+      router.replace("/data-consent");
     }
   };
 
