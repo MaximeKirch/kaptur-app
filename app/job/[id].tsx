@@ -305,12 +305,15 @@ export default function JobDetailScreen() {
       // 1. Récupérer le markdown édité
       const markdown = editorMarkdown;
 
-      // 2. Mise à jour Optimiste (UI immédiate)
+      // 2. Convertir Markdown → HTML pour le backend
+      const htmlForBackend = mdToHtmlConverter.makeHtml(markdown);
+
+      // 3. Mise à jour Optimiste (UI immédiate)
       setEditableMarkdown(markdown);
 
-      // 3. Appel API
+      // 4. Appel API (envoyer du HTML, pas du Markdown)
       await api.patch(`/jobs/${id}`, {
-        updatedReport: markdown,
+        updatedReport: htmlForBackend,
       });
 
       // 4. Rafraîchir le cache React Query
