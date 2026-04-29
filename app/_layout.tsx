@@ -13,6 +13,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useAuthStore } from "../src/store/authStore";
 import { useUserStore } from "../src/store/userStore";
+import { useConsentStore } from "../src/store/consentStore";
 import { SplashScreen } from "../src/components/SplashScreen";
 import "../global.css";
 // TODO: Réactiver quand compatible avec new arch
@@ -91,6 +92,7 @@ const queryClient = new QueryClient();
 function RootLayoutNav() {
   const { isAuthenticated, checkAuth, user } = useAuthStore();
   const { hasCompletedOnboarding, checkOnboardingStatus } = useUserStore();
+  const { status: consentStatus, loadConsentStatus } = useConsentStore();
   const segments = useSegments();
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
@@ -129,13 +131,16 @@ function RootLayoutNav() {
 
     const init = async () => {
       try {
-        // Charger auth, onboarding et crédits en parallèle
+        // Charger auth, onboarding et consentement en parallèle
         await Promise.all([
           checkAuth().catch((e) => {
             console.log("Auth check failed:", e);
           }),
           checkOnboardingStatus().catch((e) => {
             console.log("Onboarding check failed:", e);
+          }),
+          loadConsentStatus().catch((e) => {
+            console.log("Consent check failed:", e);
           }),
         ]);
 
@@ -190,6 +195,7 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === "(auth)";
     const inOnboarding = segments[0] === "onboarding";
+    const inConsentFlow = segments[0] === "data-consent" || segments[0] === "consent-required";
     const currentRoute = segments.join("/") || "/";
 
     // Breadcrumb: Tracking de navigation
@@ -201,6 +207,7 @@ function RootLayoutNav() {
     //     route: currentRoute,
     //     isAuthenticated,
     //     hasCompletedOnboarding,
+    //     consentStatus,
     //   },
     // });
 
@@ -210,6 +217,9 @@ function RootLayoutNav() {
     } else if (isAuthenticated && !hasCompletedOnboarding && !inOnboarding) {
       // Cas B : Connecté mais onboarding pas complété -> On l'envoie à l'onboarding
       router.replace("/onboarding");
+    } else if (isAuthenticated && hasCompletedOnboarding && consentStatus !== "granted" && !inConsentFlow) {
+      // Cas B.5 : Connecté, onboarding complété mais pas de consentement -> Bloquer l'accès
+      router.replace("/data-consent");
     } else if (isAuthenticated && hasCompletedOnboarding && inAuthGroup) {
       // Cas C : Connecté, onboarding complété mais sur Login/Register -> On l'envoie à l'accueil
       router.replace("/(tabs)");
@@ -220,7 +230,7 @@ function RootLayoutNav() {
 
     // NOTE : On a supprimé la redirection automatique vers /paywall.
     // L'utilisateur est libre de naviguer tant qu'il a des crédits.
-  }, [isAuthenticated, hasCompletedOnboarding, segments, isReady]);
+  }, [isAuthenticated, hasCompletedOnboarding, consentStatus, segments, isReady]);
 
   // Animated styles
   const splashAnimatedStyle = useAnimatedStyle(() => {

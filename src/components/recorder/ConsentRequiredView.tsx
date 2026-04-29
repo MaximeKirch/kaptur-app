@@ -24,7 +24,7 @@ export function ConsentRequiredView() {
       {/* Description */}
       <Text className="text-zinc-400 text-center leading-6 mb-8 px-4">
         Pour créer des rapports, vous devez accepter le traitement de vos
-        données par nos services d'intelligence artificielle.
+        enregistrements audio par nos services d'intelligence artificielle.
       </Text>
 
       {/* Info card */}

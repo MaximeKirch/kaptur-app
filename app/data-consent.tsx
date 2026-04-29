@@ -83,8 +83,8 @@ export default function DataConsentScreen() {
             </Text>
           </View>
           <Text className="text-zinc-400 text-sm leading-6">
-            • Vos enregistrements audio{"\n"}• Les transcriptions générées{"\n"}
-            • Aucune donnée personnelle (email, nom, etc.)
+            • Vos enregistrements audio (contenant votre voix){"\n"}• Les transcriptions générées à partir de ces enregistrements{"\n"}
+            • Aucune information d'identification directe (nom, email, téléphone, adresse) n'est partagée avec les services IA
           </Text>
         </View>
 
@@ -130,9 +130,7 @@ export default function DataConsentScreen() {
         {/* Disclaimer */}
         <View className="bg-yellow-500/5 border border-yellow-500/20 p-4 rounded-xl mb-8">
           <Text className="text-yellow-200 text-xs leading-5">
-            ⚠️ Sans votre consentement, vous pourrez explorer l'app mais ne
-            pourrez pas créer de nouveaux rapports. Vous pouvez révoquer cette
-            autorisation à tout moment depuis votre profil.
+            ⚠️ Ce consentement est nécessaire pour utiliser Relevo. L'application ne peut pas générer de comptes rendus sans le traitement de vos enregistrements par nos services IA. Vous pouvez révoquer cette autorisation à tout moment depuis votre profil.
           </Text>
         </View>
 
